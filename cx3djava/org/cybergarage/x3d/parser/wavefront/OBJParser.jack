@@ -1,0 +1,371 @@
+options {
+  STATIC = false;
+  LOOKAHEAD = 1;
+  DEBUG_PARSER = false;
+  ERROR_REPORTING = true;
+  USER_TOKEN_MANAGER = false;
+  USER_CHAR_STREAM = false;
+  JAVA_UNICODE_ESCAPE = false;
+  UNICODE_INPUT = false;
+}
+
+PARSER_BEGIN(OBJParser)
+
+package org.cybergarage.x3d.parser.wavefront;
+
+import org.cybergarage.x3d.node.*;
+
+public class OBJParser {
+
+	private ShapeNode				mShapeNode;
+	private IndexedFaceSetNode mIdxFaceSetNode;
+	
+	public OBJParser () {
+	}
+
+	public void initialize() {
+		mShapeNode = new ShapeNode();
+		mIdxFaceSetNode = new IndexedFaceSetNode();
+		mShapeNode.addChildNode(mIdxFaceSetNode);
+		mIdxFaceSetNode.addChildNode(new CoordinateNode());
+		mIdxFaceSetNode.addChildNode(new NormalNode());
+		mIdxFaceSetNode.setNormalPerVertex(true);
+	}
+
+	public ShapeNode getShapeNode() {
+		return mShapeNode;
+	}
+
+	private IndexedFaceSetNode getIndexedFaceSetNode() {
+		return mIdxFaceSetNode;
+	} 
+
+	private CoordinateNode getCoordinateNode() {
+		return getIndexedFaceSetNode().getCoordinateNodes();
+	}
+
+	private NormalNode getNormalNode() {
+		return getIndexedFaceSetNode().getNormalNodes();
+	}
+	
+	private void addCoodinate(float x, float y, float z) {
+		getCoordinateNode().addPoint(x, y, z);
+	}
+
+	private void addNormal(float x, float y, float z) {
+		getNormalNode().addVector(x, y, z);
+	}
+
+	
+	private void addCoordIndex(int index) {
+		getIndexedFaceSetNode().addCoordIndex(index);
+	}
+
+	public int getNCoordIndices() {
+		return getIndexedFaceSetNode().getNCoordIndices();
+	}
+
+	public int getCoordIndex(int n) {
+		return getIndexedFaceSetNode().getCoordIndex(n);
+	}
+			
+	
+	private void addNormalIndex(int index) {
+		getIndexedFaceSetNode().addNormalIndex(index);
+	}
+	public int getNNormalIndices() {
+		return getIndexedFaceSetNode().getNNormalIndices();
+	}
+
+	public int getNormalIndex(int n) {
+		return getIndexedFaceSetNode().getNormalIndex(n);
+	}
+
+
+	private void addTexCoordIndex(int index) {
+		getIndexedFaceSetNode().addTexCoordIndex(index);
+	}
+
+	public int getNTexCoordIndices() {
+		return getIndexedFaceSetNode().getNTexCoordIndices();
+	}
+
+	public int getTexCoordIndex(int n) {
+		return getIndexedFaceSetNode().getTexCoordIndex(n);
+	}
+}
+
+PARSER_END(OBJParser)
+
+///////////////////////////////////////////////
+//	SKIP
+///////////////////////////////////////////////
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <COMMENT : "#" (~["\n", "\r"])* ("\n" | "\r\n") >
+}
+
+///////////////////////////////////////////////
+//	IntegerToken / FloatToken / NameToken
+///////////////////////////////////////////////
+
+int IDToken() :
+{
+	Token t;
+}
+{
+	t=<ID>
+		{
+			return Integer.parseInt(t.image);
+		}
+}
+
+float FloatToken() :
+{
+	Token t;
+	Float floatObj;
+}
+{
+	t=<FLOAT_NUMBER>
+		{
+			floatObj = new Float(t.image);
+			return floatObj.floatValue();
+			//return Float.parseFloat(t.image);
+		}
+}
+
+String NameToken() :
+{
+	Token	t;
+}
+{
+	t=<ID>
+		{
+			return t.image;
+		}
+|	t=<NAME>
+		{
+			return t.image;
+		}
+}
+
+///////////////////////////////////////////////
+// OBJ
+///////////////////////////////////////////////
+
+void OBJ() :
+{
+}
+{
+	(OBJElement())*
+}
+
+void OBJElement() :
+{
+}
+{
+	Vertex()
+|	VertexNormal()
+|	Grouping()
+|	Face()
+|	Material()
+|	TexMap()
+}
+
+///////////////////////////////////////////////
+//	Vertex
+///////////////////////////////////////////////
+
+void Vertex() :
+{
+	float x, y, z;
+}
+{
+	"v" x=FloatToken() y=FloatToken() z=FloatToken()
+		{
+			addCoodinate(x, y, z);
+		}
+}
+
+///////////////////////////////////////////////
+//	VertexNormal
+///////////////////////////////////////////////
+
+void VertexNormal() :
+{
+	float x, y, z;
+}
+{
+	"vn" x=FloatToken() y=FloatToken() z=FloatToken()
+		{
+			addNormal(x, y, z);
+		}
+}
+
+///////////////////////////////////////////////
+//	Grouping
+///////////////////////////////////////////////
+
+void Grouping() :
+{
+}
+{
+	Group()
+|	SmoothingGroup()
+|	MergingGroup()
+|	ObjectName()
+}
+
+void Group() :
+{
+	String groupName;
+}
+{
+	"g" (groupName=NameToken())*
+		{
+		}
+}
+
+void SmoothingGroup() :
+{
+	String groupName;
+}
+{
+	"s" groupName=NameToken()
+		{
+		}
+}
+
+void MergingGroup() :
+{
+	String groupName;
+}
+{
+	"mg" groupName=NameToken()
+		{
+		}
+}
+
+void ObjectName() :
+{
+	String objName;
+}
+{
+	"o" objName=NameToken()
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	Face
+///////////////////////////////////////////////
+
+void VertexIndex() :
+{
+	int v = -1;
+	int t = -1;
+	int n = -1;
+}
+{
+	v=IDToken() ("/" (t=IDToken())* "/" n=IDToken())*
+		{
+			if (v != -1)
+				addCoordIndex(v-1);
+			if (t != -1)
+				addTexCoordIndex(t-1);
+			if (n != -1)
+				addNormalIndex(n-1);
+		}
+}
+
+void Face() :
+{
+	String groupName;
+}
+{
+	"f" (VertexIndex())*
+		{
+			int nCoordIndices = getNCoordIndices();
+			if (0 < nCoordIndices) {
+				int idx = getCoordIndex(nCoordIndices-1);
+				if (idx != -1)
+					addCoordIndex(-1);
+			}
+
+			int nNormalIndices = getNNormalIndices();
+			if (0 < nNormalIndices) {
+				int idx = getNormalIndex(nNormalIndices-1);
+				if (idx != -1)
+					addNormalIndex(-1);
+			}
+
+			int nTexCoordIndices = getNTexCoordIndices();
+			if (0 < nTexCoordIndices) {
+				int idx = getTexCoordIndex(nTexCoordIndices-1);
+				if (idx != -1)
+					addTexCoordIndex(-1);
+			}
+		}
+}
+
+///////////////////////////////////////////////
+// TexMap
+///////////////////////////////////////////////
+
+void TexMap() :
+{
+	String mapName;
+}
+{
+	"usemap" mapName=NameToken()
+		{
+		}
+|	"maplib" (mapName=NameToken())*
+		{
+		}
+}
+
+///////////////////////////////////////////////
+// Material
+///////////////////////////////////////////////
+
+void Material() :
+{
+	String matName;
+}
+{
+	"usemtl" matName=NameToken()
+		{
+		}
+|	"mtlib" (matName=NameToken())*
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//
+//	General Tokens
+//
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< ID				:	( ["0"-"9"] )+ >
+|	< NAME			:	( ["0"-"9","A"-"Z","a"-"z"] )+ >
+|	< FLOAT_NUMBER		:	(["+","-"])?(["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+							| (["+","-"])?"." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+							| (["+","-"])?(["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+	>
+|	< EXPONENT			:	["e","E"] (["+","-"])? (["0"-"9"])+ >
+}
+
+void Input() :
+{}
+{
+  OBJ() <EOF>
+}

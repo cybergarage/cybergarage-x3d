@@ -1,0 +1,4868 @@
+/******************************************************************
+*
+*	CyberVRML97 for Java
+*
+*	Copyright (C) Satoshi Konno 1997-1998
+*
+*	File : VRML97Parser.jack
+*
+*	Revision;
+*
+*	12/11/03
+*		- Thuan Truong <tqthuan@tma.com.vn>
+*		- Fixed AddChildren/RemoveChildren to read H-Anim files.
+*		- Added AddChldren/RemoveChildren to TransformNode().
+*	01/07/04
+*		- Simon Goodall <sg02r@ecs.soton.ac.uk>
+*		- Added GeometryInfoNode() to set Material nodes in root.
+*
+******************************************************************/
+
+options {
+  STATIC = false;
+  LOOKAHEAD = 1;
+  DEBUG_PARSER = false;
+  ERROR_REPORTING = true;
+  USER_TOKEN_MANAGER = false;
+  USER_CHAR_STREAM = false;
+  JAVA_UNICODE_ESCAPE = false;
+  UNICODE_INPUT = false;
+}
+
+PARSER_BEGIN(VRML97Parser)
+package org.cybergarage.x3d.parser.vrml97;
+
+import java.io.*;
+
+import org.cybergarage.x3d.field.*;
+import org.cybergarage.x3d.node.*;
+import org.cybergarage.x3d.parser.*;
+
+public class VRML97Parser extends Parser implements VRML97ParserType {
+
+	public VRML97Parser () 
+	{
+	}
+
+	///////////////////////////////////////////////
+	//	Parse
+	///////////////////////////////////////////////
+	
+	public boolean parse(Reader reader)
+	{
+		try {
+			initResult();
+			setParseResult(false);
+			Input();
+			setParseResult(true);
+			reader.close();
+		}	
+		catch (org.cybergarage.x3d.parser.vrml97.ParseException e) {
+			System.out.println(e.getMessage());
+			setErrorMessage(e.getMessage());
+		}
+		catch (org.cybergarage.x3d.parser.vrml97.TokenMgrError e) {
+			System.out.println(e.getMessage());
+			setErrorMessage(e.getMessage());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			setErrorMessage(e.getMessage());
+		}
+
+		try {
+			reader.close();
+		} catch (IOException e) {}
+				
+		return getParseResult();
+	}
+	
+	///////////////////////////////////////////////
+	//	Praser action
+	///////////////////////////////////////////////
+
+	public void addSFInt32(int value) {
+		switch (getCurrentType()) {
+			case parserTypeIdxFaceSetCoordIndex	: 
+				{
+					((IndexedFaceSetNode)getCurrentNode()).addCoordIndex(value);
+				}
+				break;
+			case parserTypeIdxFaceSetTexCoordIndex	: 
+				{
+					((IndexedFaceSetNode)getCurrentNode()).addTexCoordIndex(value);
+				}
+				break;
+			case parserTypeIdxFaceSetNormalIndex	: 
+				{
+					((IndexedFaceSetNode)getCurrentNode()).addNormalIndex(value);
+				}
+				break;
+			case parserTypeIdxFaceSetColorIndex	: 
+				{
+					((IndexedFaceSetNode)getCurrentNode()).addColorIndex(value);
+				}
+				break;
+			case parserTypeIdxLineSetCoordIndex	: 
+				{
+					((IndexedLineSetNode)getCurrentNode()).addCoordIndex(value);
+				}
+				break;
+			case parserTypeIdxLineSetColorIndex	: 
+				{
+					((IndexedLineSetNode)getCurrentNode()).addColorIndex(value);
+				}
+				break;
+			case parserTypePixelTextureImage	: 
+				{
+					((PixelTextureNode)getCurrentNode()).addImage(value);
+				}
+				break;
+		}
+	}
+
+	public void addSFFloat(float value) {
+		switch (getCurrentType()) {
+			case parserTypeCoordinateInterpolatorKey : 
+				{
+					((CoordinateInterpolatorNode)getCurrentNode()).addKey(value);
+				}
+				break;
+			case parserTypePositionInterpolatorKey : 
+				{
+					((PositionInterpolatorNode)getCurrentNode()).addKey(value);
+				}
+				break;
+			case parserTypeNormalInterpolatorKey : 
+				{
+					((NormalInterpolatorNode)getCurrentNode()).addKey(value);
+				}
+				break;
+			case parserTypeColorInterpolatorKey : 
+				{
+					((ColorInterpolatorNode)getCurrentNode()).addKey(value);
+				}
+				break;
+			case parserTypeScalarInterpolatorKey : 
+				{
+					((ScalarInterpolatorNode)getCurrentNode()).addKey(value);
+				}
+				break;
+			case parserTypeScalarInterpolatorKeyValue : 
+				{
+					((ScalarInterpolatorNode)getCurrentNode()).addKeyValue(value);
+				}
+				break;
+			case parserTypeOrientationInterpolatorKey : 
+				{
+					((OrientationInterpolatorNode)getCurrentNode()).addKey(value);
+				}
+				break;
+			case parserTypeLODRange: 
+				{
+					((LODNode)getCurrentNode()).addRange(value);
+				}
+				break;
+			case parserTypeElevationGridHeight: 
+				{
+					((ElevationGridNode)getCurrentNode()).addHeight(value);
+				}
+				break;
+			case parserTypeTextLength: 
+				{
+					((TextNode)getCurrentNode()).addLength(value);
+				}
+				break;
+			case parserTypeBackgroundGroundAngle: 
+				{
+					((BackgroundNode)getCurrentNode()).addGroundAngle(value);
+				}
+				break;
+			case parserTypeBackgroundSkyAngle: 
+				{
+					((BackgroundNode)getCurrentNode()).addSkyAngle(value);
+				}
+				break;
+			case parserTypeNavigationInfoAvatarSize: 
+				{
+					((NavigationInfoNode)getCurrentNode()).addAvatarSize(value);
+				}
+				break;
+		}
+	}
+
+	public void addSFTime(double value) {
+	}
+
+	public void addSFVec2f(float vector[]) {
+		switch (getCurrentType()) {
+			case parserTypeTextureCoordinate	: 
+				{
+					((TextureCoordinateNode)getCurrentNode()).addPoint(vector);
+				}
+				break;
+			case parserTypeExtrusionCrossSection	: 
+				{
+					((ExtrusionNode)getCurrentNode()).addCrossSection(vector);
+				}
+				break;
+			case parserTypeExtrusionScale	: 
+				{
+					((ExtrusionNode)getCurrentNode()).addScale(vector);
+				}
+				break;
+		}
+	}
+
+	public void addSFVec3f(float vector[]) {
+		switch (getCurrentType()) {
+			case parserTypeCoordinate	: 
+				{
+					((CoordinateNode)getCurrentNode()).addPoint(vector);
+				}
+				break;
+			case parserTypeNormal	: 
+				{
+					((NormalNode)getCurrentNode()).addVector(vector);
+				}
+				break;
+			case parserTypeCoordinateInterpolatorKeyValue : 
+				{
+					((CoordinateInterpolatorNode)getCurrentNode()).addKeyValue(vector);
+				}
+				break;
+			case parserTypePositionInterpolatorKeyValue : 
+				{
+					((PositionInterpolatorNode)getCurrentNode()).addKeyValue(vector);
+				}
+				break;
+			case parserTypeNormalInterpolatorKeyValue : 
+				{
+					((NormalInterpolatorNode)getCurrentNode()).addKeyValue(vector);
+				}
+				break;
+			case parserTypeExtrusionSpine : 
+				{
+					((ExtrusionNode)getCurrentNode()).addSpine(vector);
+				}
+				break;
+		}
+	}
+
+	public void addSFColor(float color[]) {
+		switch (getCurrentType()) {
+			case parserTypeColor: 
+				{
+					((ColorNode)getCurrentNode()).addColor(color);
+				}
+				break;
+			case parserTypeColorInterpolatorKeyValue: 
+				{
+					((ColorInterpolatorNode)getCurrentNode()).addKeyValue(color);
+				}
+				break;
+			case parserTypeBackgroundGroundColor: 
+				{
+					((BackgroundNode)getCurrentNode()).addGroundColor(color);
+				}
+				break;
+			case parserTypeBackgroundSkyColor: 
+				{
+					((BackgroundNode)getCurrentNode()).addSkyColor(color);
+				}
+				break;
+		}
+	}
+
+	public void addSFRotation(float rotation[]) {
+		switch (getCurrentType()) {
+			case parserTypeOrientationInterpolatorKeyValue : 
+				{
+					((OrientationInterpolatorNode)getCurrentNode()).addKeyValue(rotation);
+				}
+				break;
+			case parserTypeExtrusionOrientation : 
+				{
+					((ExtrusionNode)getCurrentNode()).addOrientation(rotation);
+				}
+				break;
+		}
+	}
+	
+	public void addSFString(String string) {
+		switch (getCurrentType()) {
+			case parserTypeWorldInfoInfo : 
+				{
+					((WorldInfoNode)getCurrentNode()).addInfo(string);
+				}
+				break;
+			case parserTypeScriptURL: 
+				{
+					((ScriptNode)getCurrentNode()).addURL(string);
+				}
+				break;
+			case parserTypeAnchorURL: 
+				{
+					((AnchorNode)getCurrentNode()).addURL(string);
+				}
+				break;
+			case parserTypeAnchorParameter: 
+				{
+					((AnchorNode)getCurrentNode()).addParameter(string);
+				}
+				break;
+			case parserTypeInlineURL: 
+				{
+					((InlineNode)getCurrentNode()).addURL(string);
+				}
+				break;
+			case parserTypeAudioClipURL: 
+				{
+					((AudioClipNode)getCurrentNode()).addURL(string);
+				}
+				break;
+			case parserTypeTextString: 
+				{
+					((TextNode)getCurrentNode()).addString(string);
+				}
+				break;
+			case parserTypeFontStyleFamily: 
+				{
+					((FontStyleNode)getCurrentNode()).addFamily(string);
+				}
+				break;
+			case parserTypeFontStyleJustify: 
+				{
+					((FontStyleNode)getCurrentNode()).addJustify(string);
+				}
+				break;
+			case parserTypeImageTextureURL: 
+				{
+					((ImageTextureNode)getCurrentNode()).addURL(string);
+				}
+				break;
+			case parserTypeMovieTextureURL: 
+				{
+					((MovieTextureNode)getCurrentNode()).addURL(string);
+				}
+				break;
+			case parserTypeBackgroundBackURL: 
+				{
+					((BackgroundNode)getCurrentNode()).addBackURL(string);
+				}
+				break;
+			case parserTypeBackgroundBottomURL: 
+				{
+					((BackgroundNode)getCurrentNode()).addBottomURL(string);
+				}
+				break;
+			case parserTypeBackgroundFrontURL: 
+				{
+					((BackgroundNode)getCurrentNode()).addFrontURL(string);
+				}
+				break;
+			case parserTypeBackgroundLeftURL: 
+				{
+					((BackgroundNode)getCurrentNode()).addLeftURL(string);
+				}
+				break;
+			case parserTypeBackgroundRightURL: 
+				{
+					((BackgroundNode)getCurrentNode()).addRightURL(string);
+				}
+				break;
+			case parserTypeBackgroundTopURL: 
+				{
+					((BackgroundNode)getCurrentNode()).addTopURL(string);
+				}
+				break;
+			case parserTypeNavigationInfoType: 
+				{
+					((NavigationInfoNode)getCurrentNode()).addType(string);
+				}
+				break;
+		}
+	}
+
+}
+
+PARSER_END(VRML97Parser)
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+| <COMMENT : "#" (~["\n", "\r"])* ("\n" | "\r\n") >
+}
+
+TOKEN : 
+{
+	< children			: "children" >
+|	< NULL				: "NULL" >
+}
+
+///////////////////////////////////////////////
+//	NodeBegin() / NodeEnd()
+///////////////////////////////////////////////
+
+void NodeBegin() :
+{}
+{
+	"{"
+}
+
+void NodeEnd() :
+{}
+{
+	"}" (",")*
+}
+
+///////////////////////////////////////////////
+//	SFBool
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< TRUE			: "TRUE" >
+|	< FALSE			: "FALSE" >
+}
+
+boolean SFBoolToken() :
+{
+}
+{
+	<TRUE>
+		{
+			return true;
+		}
+|	<FALSE>
+		{
+			return false;
+		}
+}
+
+///////////////////////////////////////////////
+//	SF/MFFloat
+///////////////////////////////////////////////
+
+float SFFloatToken() :
+{
+	Token	t;
+	Float floatObj;
+	float	value;
+}
+{
+	t=<NUMBER>
+		{
+			value = (float)Integer.parseInt(t.image);
+			addSFFloat(value);
+			return value;
+		}
+|	t=<FLOAT_NUMBER>
+		{
+			floatObj = new Float(t.image);
+			value = floatObj.floatValue();
+			//value = Float.parseFloat(t.image);
+			addSFFloat(value);
+			return value;
+		}
+}
+
+void MFFloatToken() :
+{}
+{
+//	"[" (SFFloatToken() ("," SFFloatToken())*)* "]"
+	"[" (SFFloatToken() (",")*)* "]"
+|	SFFloatToken()
+}
+
+///////////////////////////////////////////////
+//	SF/MFTime
+///////////////////////////////////////////////
+
+double SFTimeToken() :
+{
+	Token		t;
+	Double	doubleObj;
+	double	value;
+}
+{
+	t=<NUMBER>
+		{
+			value = (double)Integer.parseInt(t.image);
+			addSFTime(value);
+			return value;
+		}
+|	t=<FLOAT_NUMBER>
+		{
+			doubleObj = new Double(t.image);
+			value = doubleObj.doubleValue();
+			//value = Double.parseDouble(t.image);
+			addSFTime(value);
+			return value;
+		}
+}
+
+void MFTimeToken() :
+{}
+{
+//	"[" (SFTimeToken() ( "," SFTimeToken() )*)* "]"
+	"[" (SFTimeToken() (",")*)* "]"
+|	SFTimeToken()
+}
+
+///////////////////////////////////////////////
+//	SF/MFInt32
+///////////////////////////////////////////////
+
+int SFInt32Token() :
+{
+	Token	t;
+	int		value; 
+}
+{
+	t=<NUMBER>
+		{
+			value = Integer.parseInt(t.image);
+			addSFInt32(value);
+			return value;
+		}
+|	t=<HEX_NUMBER>
+		{
+			value = Integer.parseInt(new String(t.image.getBytes(), 2, (t.image.length() - 2)), 16);
+			addSFInt32(value);
+			return value;
+		}
+}
+
+void MFInt32Token() :
+{}
+{
+//	"[" (SFInt32Token() ( "," SFInt32Token() )*)* "]"
+	"[" (SFInt32Token() (",")*)* "]"
+|	SFInt32Token()
+}
+
+///////////////////////////////////////////////
+//	SF/MFVec3f
+///////////////////////////////////////////////
+
+void SFVec2fToken(float value[]) :
+{
+	float x, y;
+}
+{
+	x=SFFloatToken() y=SFFloatToken()
+		{
+			value[0] = x;
+			value[1] = y;
+			addSFVec2f(value);
+//			System.out.println("MFVec3fToken : " + value[0] + ", "+ value[1] + ", " + value[2] );
+		}
+}
+
+void MFVec2fToken() :
+{
+	float value[] = new float[2];
+}
+{
+//	"[" (SFVec2fToken(value) ( "," SFVec2fToken(value) )*)* "]"
+	"[" (SFVec2fToken(value) (",")*)* "]"
+|	SFVec2fToken(value)
+}
+
+///////////////////////////////////////////////
+//	SF/MFVec3f
+///////////////////////////////////////////////
+
+void SFVec3fToken(float value[]) :
+{
+	float x, y, z;
+}
+{
+	x=SFFloatToken() y=SFFloatToken() z=SFFloatToken()
+		{
+			value[0] = x;
+			value[1] = y;
+			value[2] = z;
+			addSFVec3f(value);
+//			System.out.println("MFVec3fToken : " + value[0] + ", "+ value[1] + ", " + value[2] );
+		}
+}
+
+void MFVec3fToken() :
+{
+	float value[] = new float[3];
+}
+{
+//	"[" (SFVec3fToken(value) ( "," SFVec3fToken(value) )*)* "]"
+	"[" (SFVec3fToken(value) (",")*)* "]"
+|	SFVec3fToken(value)
+}
+
+
+///////////////////////////////////////////////
+//	SF/MFRotation
+///////////////////////////////////////////////
+
+void SFRotationToken(float value[]) :
+{
+	float x, y, z, w;
+}
+{
+	x=SFFloatToken() y=SFFloatToken() z=SFFloatToken() w=SFFloatToken()
+		{
+			value[0] = x;
+			value[1] = y;
+			value[2] = z;
+			value[3] = w;
+			addSFRotation(value);
+		}
+}
+
+void MFRotationToken() :
+{
+	float value[] = new float[4];
+}
+{
+//	"[" (SFRotationToken(value) ( "," SFRotationToken(value) )*)* "]"
+	"[" (SFRotationToken(value) (",")*)* "]"
+|	SFRotationToken(value)
+}
+
+///////////////////////////////////////////////
+//	SF/MFColor
+///////////////////////////////////////////////
+
+void SFColorToken(float color[]) :
+{
+	float x, y, z;
+}
+{
+	x=SFFloatToken() y=SFFloatToken() z=SFFloatToken()
+		{
+			color[0] = x;
+			color[1] = y;
+			color[2] = z;
+			addSFColor(color);
+//			System.out.println("MFVec3fToken : " + value[0] + ", "+ value[1] + ", " + value[2] );
+		}
+}
+
+void MFColorToken() :
+{
+	float color[] = new float[3];
+}
+{
+//	"[" (SFColorToken(color) ( "," SFColorToken(color) )*)* "]"
+	"[" (SFColorToken(color) (",")*)* "]"
+|	SFColorToken(color)
+}
+
+///////////////////////////////////////////////
+//	SF/MFString
+///////////////////////////////////////////////
+
+String SFStringToken() :
+{
+	String	value;
+	Token	t;
+}
+{
+	t=<STRING>
+		{
+			value = t.image.substring(1, t.image.length()-1);
+			addSFString(value);
+			return value;
+		}
+}
+
+void MFStringToken() :
+{}
+{
+//	"[" (SFStringToken() ( "," SFStringToken() )*)* "]"
+	"[" (SFStringToken() (",")*)* "]"
+|	SFStringToken()
+}
+
+///////////////////////////////////////////////
+//	SFImage
+///////////////////////////////////////////////
+
+void SFImageToken() :
+{}
+{
+	(SFInt32Token())*
+}
+
+///////////////////////////////////////////////
+//	DEF/USE
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< DEF			: "DEF" >
+|	< USE			: "USE" >
+}
+
+String Def() :
+{
+}
+{
+	<DEF>
+		{
+			String nodeName = getNextToken().image;
+			setDefName(nodeName);
+			return nodeName;
+		}
+}
+
+Node Use() :
+{
+}
+{
+	<USE>
+		{
+			String nodeName = getNextToken().image;
+			Node defNode = findDEFNode(nodeName);
+
+			Node instanceNode = null;
+			if (defNode != null) {
+				Node parentNode = getCurrentNode();
+				if (parentNode == null) {
+					instanceNode = defNode.createInstanceNode();
+					addNode(instanceNode);
+				}
+				else if (parentNode != defNode && parentNode.isAncestorNode(defNode) == false) {
+					instanceNode = defNode.createInstanceNode();
+					addNode(instanceNode);
+				}
+			}
+
+			return instanceNode;
+		}
+}
+
+///////////////////////////////////////////////
+//	ROUTE
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< ROUTE			: "ROUTE" >
+|	< TO			: "TO" >
+}
+
+String RouteNodeName() :
+{
+	Token	t;
+}
+{
+	t=<ID>
+		{
+			return t.image;
+		}
+}
+
+String RouteFieldName() :
+{
+	Token	t;
+}
+{
+	t=<ID>
+		{
+			return t.image;
+		}
+}
+
+void Route() :
+{
+	String eventOutNodeName;
+	String eventOutFieldName;
+	String eventInNodeName;
+	String eventInFieldName;
+}
+{
+	<ROUTE> eventOutNodeName=RouteNodeName() "." eventOutFieldName=RouteFieldName() <TO> eventInNodeName=RouteNodeName() "." 
+		{
+			eventInFieldName = getNextToken().image;
+			addRoute(eventOutNodeName, eventOutFieldName, eventInNodeName, eventInFieldName);
+		}
+}
+
+
+///////////////////////////////////////////////
+//
+//	Nodes
+//
+///////////////////////////////////////////////
+
+void Node() :
+{}
+{
+	(Def())* SFNode()
+}
+
+void SFNode() :
+{}
+{
+	GroupingNode()
+|	LightNode()
+|	TimeSensor()
+|	InterpolatorNode()
+|	SensorNode()
+|	Script()
+|	CommonNode()
+|	BindableNode()
+|	GeometryInfoNode()
+|	Use()
+}
+
+void MFNode() :
+{}
+{
+	"[" (SFNode())* "]"
+}
+
+void SensorNode() :
+{}
+{
+	CylinderSensor()
+|	PlaneSensor()
+|	ProximitySensor()
+|	SphereSensor()
+|	TouchSensor()
+|	VisibilitySensor()
+}
+
+void InterpolatorNode() :
+{}
+{
+	CoordinateInterpolator()
+|	ScalarInterpolator()
+|	PositionInterpolator()
+|	OrientationInterpolator()
+|	NormalInterpolator()
+|	ColorInterpolator()
+}
+
+void LightNode() :
+{}
+{
+	DirectionalLight()
+|	PointLight()
+|	SpotLight()
+}
+
+void GroupingNode() :
+{}
+{
+	Anchor()
+|	Billboard()
+|	Collision()
+|	Inline()
+|	LOD()
+|	Switch()
+|	Transform()
+|	Group()
+}
+
+void CommonNode() :
+{}
+{
+	AudioClip()
+|	Sound()
+|	Shape()
+}
+
+void GeometryNode() :
+{}
+{
+	IndexedFaceSet()
+|	IndexedLineSet()
+|	Box()
+|	Cone()
+|	Extrusion()
+|	PointSet()
+|	Sphere()
+|	Cylinder()
+|	ElevationGrid()
+|	Text()
+}
+
+void BindableNode() :
+{}
+{
+	Background()
+|	Viewpoint()
+|	Fog()
+|	NavigationInfo()
+|	WorldInfo()
+}
+
+void GeometryInfoNode() :
+{}
+{
+	Color()
+|	Coordinate()
+|	Normal()
+|	TextureCoordinate()
+|	Appearance()
+|	Material()
+}
+
+//////////////////////////////////////////////
+//	Children
+///////////////////////////////////////////////
+
+void ChildrenElement() :
+{}
+{
+	SFNode()
+|	<NULL>
+}
+
+void Children() :
+{}
+{
+	<children> ("[")* ((Def())* (ChildrenElement()))* ("]")*
+}
+
+//////////////////////////////////////////////
+//	AddChildren / RemoveChildren
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< addChildren		: "addChildren" >
+|	< removeChildren	: "removeChildren" >
+}
+
+void AddChildren() :
+{}
+{
+//	<addChildren> MFNode()
+	<addChildren> ("[")* ((Def())* (ChildrenElement()))* ("]")*
+}
+
+void RemoveChildren() :
+{}
+{
+//	<removeChildren> MFNode()
+	<removeChildren> ("[")* ((Def())* (ChildrenElement()))* ("]")*
+}
+
+///////////////////////////////////////////////
+//
+//	Node
+//
+///////////////////////////////////////////////
+
+///////////////////////////////////////////////
+//	Anchor
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Anchor		: "Anchor" >
+|	< url			: "url" >
+|	< parameter		: "parameter" >
+|	< description	: "description" >
+|	< bboxCenter	: "bboxCenter" >
+|	< bboxSize		: "bboxSize" >
+}
+
+void AnchorURLID() :
+{}
+{
+	<url>
+		{
+			pushNode(getCurrentNode(), parserTypeAnchorURL);
+		}
+}
+
+void AnchorParameterID() :
+{}
+{
+	<parameter>
+		{
+			pushNode(getCurrentNode(), parserTypeAnchorParameter);
+		}
+}
+
+void AnchorElement() :
+{
+	float	vec[] = new float[3];
+	String	value;
+}
+{
+	AnchorURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	AnchorParameterID() MFStringToken()	
+		{
+			popNode();
+		}
+|	<description> value=SFStringToken()
+		{
+			((AnchorNode)getCurrentNode()).setDescription(value);
+		}
+|	<bboxCenter> SFVec3fToken(vec)
+		{
+			((AnchorNode)getCurrentNode()).setBoundingBoxCenter(vec);
+		}
+|	<bboxSize> SFVec3fToken(vec)
+		{
+			((AnchorNode)getCurrentNode()).setBoundingBoxSize(vec);
+		}
+|	Children()
+}
+
+void AnchorID() :
+{}
+{
+	<Anchor>
+		{
+			AnchorNode anchor = new AnchorNode();
+			anchor.setName(getDefName());
+			addNode(anchor);
+			pushNode(anchor, parserTypeAnchor);
+		}
+}
+
+void Anchor() :
+{}
+{
+	AnchorID() NodeBegin() (AnchorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Appearance
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Appearance		: "Appearance" >
+|	< material			: "material" >
+|	< textureTransform	: "textureTransform" >
+|	< texture			: "texture" >
+}
+
+void AppearanceElement() :
+{
+}
+{
+	<material>					((Def())* Material() | Use() | <NULL>)
+|	<textureTransform>		((Def())* TextureTransform() | Use() | <NULL>)
+|	<texture>					(((Def())* (ImageTexture() | MovieTexture() | PixelTexture())) | <NULL>)
+}
+
+void AppearanceID() :
+{}
+{
+	<Appearance>
+		{
+			AppearanceNode apper = new AppearanceNode();
+			apper.setName(getDefName());
+			addNode(apper);
+			pushNode(apper, parserTypeAppearance);
+		}
+}
+
+void Appearance() :
+{}
+{
+	AppearanceID() NodeBegin() (AppearanceElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	AudioClip
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< AudioClip		: "AudioClip" >
+|	< loop			: "loop" >
+|	< pitch			: "pitch" >
+|	< startTime		: "startTime" >
+|	< stopTime		: "stopTime" >
+}
+
+void AudioClipURLID() :
+{}
+{
+	<url>
+		{
+			pushNode(getCurrentNode(), parserTypeAudioClipURL);
+		}
+}
+
+void AudioClipElement() :
+{
+	String	svalue;
+	boolean	bvalue;
+	float	fvalue;
+	double	dvalue;
+}
+{
+	AudioClipURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	<description> svalue=SFStringToken()
+		{
+			((AudioClipNode)getCurrentNode()).setDescription(svalue);
+		}
+|	<loop> bvalue=SFBoolToken()
+		{
+			((AudioClipNode)getCurrentNode()).setLoop(bvalue);
+		}
+|	<pitch> fvalue=SFFloatToken()
+		{
+			((AudioClipNode)getCurrentNode()).setPitch(fvalue);
+		}
+|	<startTime> dvalue=SFTimeToken()
+		{
+			((AudioClipNode)getCurrentNode()).setStartTime(dvalue);
+		}
+|	<stopTime> dvalue=SFTimeToken()
+		{
+			((AudioClipNode)getCurrentNode()).setStopTime(dvalue);
+		}
+}
+
+void AudioClipID() :
+{}
+{
+	<AudioClip>
+		{
+			AudioClipNode aclip = new AudioClipNode();
+			aclip.setName(getDefName());
+			addNode(aclip);
+			pushNode(aclip, parserTypeAudioClip);
+		}
+}
+
+void AudioClip() :
+{}
+{
+	AudioClipID() NodeBegin() (AudioClipElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Background
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Background	: "Background" >
+|	< backURL		: "backUrl" >
+|	< bottomURL		: "bottomUrl" >
+|	< frontURL		: "frontUrl" >
+|	< leftURL		: "leftUrl" >
+|	< rightURL		: "rightUrl" >
+|	< topURL			: "topUrl" >
+|	< groundAngle	: "groundAngle" >
+|	< skyAngle		: "skyAngle" >
+|	< groundColor	: "groundColor" >
+|	< skyColor		: "skyColor" >
+}
+
+void BackgroundBackURLID() :
+{}
+{
+	<backURL>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundBackURL);
+		}
+}
+
+void BackgroundBottomURLID() :
+{}
+{
+	<bottomURL>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundBottomURL);
+		}
+}
+
+void BackgroundFrontURLID() :
+{}
+{
+	<frontURL>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundFrontURL);
+		}
+}
+
+void BackgroundLeftURLID() :
+{}
+{
+	<leftURL>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundLeftURL);
+		}
+}
+
+void BackgroundRightURLID() :
+{}
+{
+	<rightURL>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundRightURL);
+		}
+}
+
+void BackgroundTopURLID() :
+{}
+{
+	<topURL>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundTopURL);
+		}
+}
+
+void BackgroundGroundAngleID() :
+{}
+{
+	<groundAngle>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundGroundAngle);
+		}
+}
+
+void BackgroundSkyAngleID() :
+{}
+{
+	<skyAngle>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundSkyAngle);
+		}
+}
+
+void BackgroundGroundColorID() :
+{}
+{
+	<groundColor>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundGroundColor);
+		}
+}
+
+void BackgroundSkyColorID() :
+{}
+{
+	<skyColor>
+		{
+			pushNode(getCurrentNode(), parserTypeBackgroundSkyColor);
+		}
+}
+
+void BackgroundElement() :
+{
+	float	vec[] = new float[3];
+	String	value;
+}
+{
+	BackgroundBackURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	BackgroundBottomURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	BackgroundFrontURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	BackgroundLeftURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	BackgroundRightURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	BackgroundTopURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	BackgroundGroundAngleID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	BackgroundSkyAngleID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	BackgroundGroundColorID() MFColorToken()	
+		{
+			popNode();
+		}
+|	BackgroundSkyColorID() MFColorToken()	
+		{
+			popNode();
+		}
+}
+
+void BackgroundID() :
+{}
+{
+	<Background>
+		{
+			BackgroundNode bg = new BackgroundNode();
+			bg.setName(getDefName());
+			addNode(bg);
+			pushNode(bg, parserTypeBackground);
+		}
+}
+
+void Background() :
+{}
+{
+	BackgroundID() NodeBegin() (BackgroundElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Billboard
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Billboard			: "Billboard" >
+|	< axisOfRotation	: "axisOfRotation" >
+}
+
+void BillboardElement() :
+{
+	float	vec[] = new float[3];
+	float	value[] = new float[3];
+}
+{
+	<axisOfRotation> SFVec3fToken(value)
+		{
+			((BillboardNode)getCurrentNode()).setAxisOfRotation(value);
+		}
+|	<bboxCenter> SFVec3fToken(vec)
+		{
+			((BillboardNode)getCurrentNode()).setBoundingBoxCenter(vec);
+		}
+|	<bboxSize> SFVec3fToken(vec)
+		{
+			((BillboardNode)getCurrentNode()).setBoundingBoxSize(vec);
+		}
+|	Children()
+}
+
+void BillboardID() :
+{}
+{
+	<Billboard>
+		{
+			BillboardNode billboard = new BillboardNode();
+			billboard.setName(getDefName());
+			addNode(billboard);
+			pushNode(billboard, parserTypeBillboard);
+		}
+}
+
+void Billboard() :
+{}
+{
+	BillboardID() NodeBegin() (BillboardElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Box
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Box		: "Box" >
+|	< size		: "size" >
+}
+
+void BoxElement() :
+{
+	float	value[] = new float[3];
+}
+{
+	<size> SFVec3fToken(value)
+		{
+			((BoxNode)getCurrentNode()).setSize(value);
+		}
+}
+
+void BoxID() :
+{}
+{
+	<Box>
+		{
+			BoxNode box = new BoxNode();
+			box.setName(getDefName());
+			addNode(box);
+			pushNode(box, parserTypeBox);
+		}
+}
+
+void Box() :
+{}
+{
+	BoxID() NodeBegin() (BoxElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Collision
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Collision		: "Collision" >
+|	< collide		: "collide" >
+|	< proxy			: "proxy" >
+}
+
+void CollisionElement() :
+{
+	float	vec[] = new float[3];
+	boolean	value;
+}
+{
+	<collide> value=SFBoolToken()
+		{
+			((CollisionNode)getCurrentNode()).setCollide(value);
+		}
+|	<bboxCenter> SFVec3fToken(vec)
+		{
+			((CollisionNode)getCurrentNode()).setBoundingBoxCenter(vec);
+		}
+|	<bboxSize> SFVec3fToken(vec)
+		{
+			((CollisionNode)getCurrentNode()).setBoundingBoxSize(vec);
+		}
+|	Children()
+|	<proxy> (SFNode() | <NULL>)
+}
+
+void CollisionID() :
+{}
+{
+	<Collision>
+		{
+			CollisionNode collision = new CollisionNode();
+			collision.setName(getDefName());
+			addNode(collision);
+			pushNode(collision, parserTypeCollision);
+		}
+}
+
+void Collision() :
+{}
+{
+	CollisionID() NodeBegin() (CollisionElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Color
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Color		: "Color" >
+|	< color		: "color" >
+}
+
+void ColorID() :
+{}
+{
+	<Color>
+		{
+			ColorNode color = new ColorNode();
+			color.setName(getDefName());
+			addNode(color);
+			pushNode(color, parserTypeColor);
+		}
+}
+
+void Color() :
+{}
+{
+	ColorID() NodeBegin() <color> MFColorToken() NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	ColorInterpolator
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< ColorInterpolator	: "ColorInterpolator" >
+}
+
+void ColorInterpolatorKeyID() :
+{}
+{
+	<key>
+		{
+			pushNode(getCurrentNode(), parserTypeColorInterpolatorKey);
+		}
+}
+
+void ColorInterpolatorKeyValueID() :
+{}
+{
+	<keyValue>
+		{
+			pushNode(getCurrentNode(), parserTypeColorInterpolatorKeyValue);
+		}
+}
+
+void ColorInterpolatorID() :
+{}
+{
+	<ColorInterpolator>
+		{
+			ColorInterpolatorNode colorInterp = new ColorInterpolatorNode();
+			colorInterp.setName(getDefName());
+			addNode(colorInterp);
+			pushNode(colorInterp, parserTypeColorInterpolator);
+		}
+}
+
+void ColorInterpolatorElement() :
+{
+	float	value3f[] = new float[3];
+	float	value;
+	boolean ok;
+}
+{
+	ColorInterpolatorKeyID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	ColorInterpolatorKeyValueID() MFColorToken()	
+		{
+			popNode();
+		}
+}
+
+void ColorInterpolator() :
+{}
+{
+	ColorInterpolatorID() NodeBegin() (ColorInterpolatorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Cone
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Cone			: "Cone" >
+|	< height		: "height" >
+|	< bottomRadius	: "bottomRadius" >
+|	< side			: "side" >
+|	< bottom		: "bottom" >
+}
+
+void ConeElement() :
+{
+	boolean	bvalue;
+	float	fvalue;
+}
+{
+	<side> bvalue=SFBoolToken()
+		{
+			((ConeNode)getCurrentNode()).setSide(bvalue);
+		}
+|	<bottom> bvalue=SFBoolToken()
+		{
+			((ConeNode)getCurrentNode()).setBottom(bvalue);
+		}
+|	<height> fvalue=SFFloatToken()
+		{
+			((ConeNode)getCurrentNode()).setHeight(fvalue);
+		}
+|	<bottomRadius> fvalue=SFFloatToken()
+		{
+			((ConeNode)getCurrentNode()).setBottomRadius(fvalue);
+		}
+}
+
+void ConeID() :
+{}
+{
+	<Cone>
+		{
+			ConeNode cone = new ConeNode();
+			cone.setName(getDefName());
+			addNode(cone);
+			pushNode(cone, parserTypeCone);
+		}
+}
+
+void Cone() :
+{}
+{
+	ConeID() NodeBegin() (ConeElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Coordinate
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Coordinate	: "Coordinate" >
+|	< point			: "point" >
+}
+
+void CoordinateID() :
+{}
+{
+	<Coordinate>
+		{
+			CoordinateNode coord = new CoordinateNode();
+			coord.setName(getDefName());
+			addNode(coord);
+			pushNode(coord, parserTypeCoordinate);
+		}
+}
+
+void Coordinate() :
+{}
+{
+	CoordinateID() NodeBegin() <point> MFVec3fToken() NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	CoordinateInterpolator
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< CoordinateInterpolator	: "CoordinateInterpolator" >
+|	< key						: "key" >
+|	< keyValue					: "keyValue" >
+}
+
+void CoordinateInterpolatorKeyID() :
+{}
+{
+	<key>
+		{
+			pushNode(getCurrentNode(), parserTypeCoordinateInterpolatorKey);
+		}
+}
+
+void CoordinateInterpolatorKeyValueID() :
+{}
+{
+	<keyValue>
+		{
+			pushNode(getCurrentNode(), parserTypeCoordinateInterpolatorKeyValue);
+		}
+}
+
+void CoordinateInterpolatorID() :
+{}
+{
+	<CoordinateInterpolator>
+		{
+			CoordinateInterpolatorNode coordInterp = new CoordinateInterpolatorNode();
+			coordInterp.setName(getDefName());
+			addNode(coordInterp);
+			pushNode(coordInterp, parserTypeCoordinateInterpolator);
+		}
+}
+
+void CoordinateInterpolatorElement() :
+{
+	float	value3f[] = new float[3];
+	float	value;
+	boolean ok;
+}
+{
+	CoordinateInterpolatorKeyID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	CoordinateInterpolatorKeyValueID() MFVec3fToken()	
+		{
+			popNode();
+		}
+}
+
+void CoordinateInterpolator() :
+{}
+{
+	CoordinateInterpolatorID() NodeBegin() (CoordinateInterpolatorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Cylinder
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Cylinder			: "Cylinder" >
+|	< top					: "top" >
+|	< radius				: "radius" >
+}
+
+void CylinderElement() :
+{
+	boolean	bvalue;
+	float	fvalue;
+}
+{
+	<side> bvalue=SFBoolToken()
+		{
+			((CylinderNode)getCurrentNode()).setSide(bvalue);
+		}
+|	<bottom> bvalue=SFBoolToken()
+		{
+			((CylinderNode)getCurrentNode()).setBottom(bvalue);
+		}
+|	<top> bvalue=SFBoolToken()
+		{
+			((CylinderNode)getCurrentNode()).setTop(bvalue);
+		}
+|	<height> fvalue=SFFloatToken()
+		{
+			((CylinderNode)getCurrentNode()).setHeight(fvalue);
+		}
+|	<radius> fvalue=SFFloatToken()
+		{
+			((CylinderNode)getCurrentNode()).setRadius(fvalue);
+		}
+}
+
+void CylinderID() :
+{}
+{
+	<Cylinder>
+		{
+			CylinderNode cylinder = new CylinderNode();
+			cylinder.setName(getDefName());
+			addNode(cylinder);
+			pushNode(cylinder, parserTypeCylinder);
+		}
+}
+
+void Cylinder() :
+{}
+{
+	CylinderID() NodeBegin() (CylinderElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	CylinderSensor
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< CylinderSensor	: "CylinderSensor" >
+|	< minAngle			: "minAngle" >
+|	< maxAngle			: "maxAngle" >
+|	< enabled			: "enabled" >
+|	< diskAngle			: "diskAngle" >
+|	< offset			: "offset" >
+|	< autoOffset		: "autoOffset" >
+}
+
+void CylinderSensorElement() :
+{
+	boolean	bvalue;
+	float	fvalue;
+}
+{
+	<minAngle>	fvalue = SFFloatToken()
+		{
+			((CylinderSensorNode)getCurrentNode()).setMinAngle(fvalue);
+		}
+|	<maxAngle>	fvalue = SFFloatToken()
+		{
+			((CylinderSensorNode)getCurrentNode()).setMaxAngle(fvalue);
+		}
+|	<diskAngle>	fvalue = SFFloatToken()
+		{
+			((CylinderSensorNode)getCurrentNode()).setDiskAngle(fvalue);
+		}
+|	<offset>	fvalue = SFFloatToken()
+		{
+			((CylinderSensorNode)getCurrentNode()).setOffset(fvalue);
+		}
+|	<enabled>	bvalue = SFBoolToken()
+		{
+			((CylinderSensorNode)getCurrentNode()).setEnabled(bvalue);
+		}
+|	<autoOffset>	bvalue = SFBoolToken()
+		{
+			((CylinderSensorNode)getCurrentNode()).setAutoOffset(bvalue);
+		}
+}
+
+void CylinderSensorID() :
+{}
+{
+	<CylinderSensor>
+		{
+			CylinderSensorNode sensor = new CylinderSensorNode();
+			sensor.setName(getDefName());
+			addNode(sensor);
+			pushNode(sensor, parserTypeCylinderSensor);
+		}
+}
+
+void CylinderSensor() :
+{}
+{
+	CylinderSensorID() NodeBegin() (CylinderSensorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	DirectionalLight
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< DirectionalLight	: "DirectionalLight" >
+|	< on				: "on" >
+|	< intensity			: "intensity" >
+|	< ambientIntensity	: "ambientIntensity" >
+|	< direction			: "direction" >
+}
+
+void DirectionalLightElement() :
+{
+	float	value3f[] = new float[3];
+	float	value;
+	boolean ok;
+}
+{
+	<on>	ok = SFBoolToken()
+		{
+			((DirectionalLightNode)getCurrentNode()).setOn(ok);
+		}
+|	<intensity> value = SFFloatToken()
+		{
+			((DirectionalLightNode)getCurrentNode()).setIntensity(value);
+		}
+|	<ambientIntensity> value = SFFloatToken()
+		{
+			((DirectionalLightNode)getCurrentNode()).setAmbientIntensity(value);
+		}
+|	<color> SFColorToken(value3f)
+		{
+			((DirectionalLightNode)getCurrentNode()).setColor(value3f);
+		}
+|	<direction> SFVec3fToken(value3f)
+		{
+			((DirectionalLightNode)getCurrentNode()).setDirection(value3f);
+		}
+}
+
+void DirectionalLightID() :
+{}
+{
+	<DirectionalLight>
+		{
+			DirectionalLightNode light = new DirectionalLightNode();
+			light.setName(getDefName());
+			addNode(light);
+			pushNode(light, parserTypeDirectionalLight);
+		}
+}
+
+void DirectionalLight() :
+{}
+{
+	DirectionalLightID() NodeBegin() (DirectionalLightElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	ElevationGrid
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< ElevationGrid		: "ElevationGrid" >
+|	< ccw				: "ccw" >
+|	< colorPerVertex	: "colorPerVertex" >
+|	< creaseAngle		: "creaseAngle" >
+|	< normalPerVertex	: "normalPerVertex" >
+|	< solid				: "solid" >
+|	< xDimension		: "xDimension" >
+|	< xSpacing			: "xSpacing" >
+|	< zDimension		: "zDimension" >
+|	< zSpacing			: "zSpacing" >
+}
+
+void ElevationGridHeightID() :
+{}
+{
+	<height>
+		{
+			pushNode(getCurrentNode(), parserTypeElevationGridHeight);
+		}
+}
+
+void ElevationGridElement() :
+{
+	boolean	bvalue;
+	float	fvalue;
+	int		ivalue;
+	double	dvalue;
+}
+{
+	ElevationGridHeightID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	<ccw> bvalue=SFBoolToken()
+		{
+			((ElevationGridNode)getCurrentNode()).setCCW(bvalue);
+		}
+|	<colorPerVertex> bvalue=SFBoolToken()
+		{
+			((ElevationGridNode)getCurrentNode()).setColorPerVertex(bvalue);
+		}
+|	<creaseAngle> fvalue=SFFloatToken()
+		{
+			((ElevationGridNode)getCurrentNode()).setCreaseAngle(fvalue);
+		}
+|	<solid> bvalue=SFBoolToken()
+		{
+			((ElevationGridNode)getCurrentNode()).setSolid(bvalue);
+		}
+|	<normalPerVertex> bvalue=SFBoolToken()
+		{
+			((ElevationGridNode)getCurrentNode()).setNormalPerVertex(bvalue);
+		}
+|	<xDimension> ivalue=SFInt32Token()
+		{
+			((ElevationGridNode)getCurrentNode()).setXDimension(ivalue);
+		}
+|	<xSpacing> fvalue=SFFloatToken()
+		{
+			((ElevationGridNode)getCurrentNode()).setXSpacing(fvalue);
+		}
+|	<zDimension> ivalue=SFInt32Token()
+		{
+			((ElevationGridNode)getCurrentNode()).setZDimension(ivalue);
+		}
+|	<zSpacing> fvalue=SFFloatToken()
+		{
+			((ElevationGridNode)getCurrentNode()).setZSpacing(fvalue);
+		}
+|	<normal>	((Def())* Normal() | Use() | <NULL>)
+|	<color>		((Def())* Color() | Use() | <NULL>)
+|	<texCoord>	((Def())* TextureCoordinate() | Use() | <NULL>)
+}
+
+void ElevationGridID() :
+{}
+{
+	<ElevationGrid>
+		{
+			ElevationGridNode egrid = new ElevationGridNode();
+			egrid.setName(getDefName());
+			addNode(egrid);
+			pushNode(egrid, parserTypeElevationGrid);
+		}
+}
+
+void ElevationGrid() :
+{}
+{
+	ElevationGridID() NodeBegin() (ElevationGridElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Extrusion
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Extrusion		: "Extrusion" >
+|	< beginCap		: "beginCap" >
+|	< endCap		: "endCap" >
+|	< crossSection	: "crossSection" >
+|	< spine			: "spine" >
+}
+
+void ExtrusionCrossSectionID() :
+{}
+{
+	<crossSection>
+		{
+			pushNode(getCurrentNode(), parserTypeExtrusionCrossSection);
+		}
+}
+
+void ExtrusionOrientationID() :
+{}
+{
+	<orientation>
+		{
+			pushNode(getCurrentNode(), parserTypeExtrusionOrientation);
+		}
+}
+
+void ExtrusionScaleID() :
+{}
+{
+	<scale>
+		{
+			pushNode(getCurrentNode(), parserTypeExtrusionScale);
+		}
+}
+
+void ExtrusionSpineID() :
+{}
+{
+	<spine>
+		{
+			pushNode(getCurrentNode(), parserTypeExtrusionSpine);
+		}
+}
+
+void ExtrusionElement() :
+{
+	boolean	bvalue;
+	float	fvalue;
+	int		ivalue;
+	double	dvalue;
+}
+{
+	ExtrusionCrossSectionID() MFVec2fToken()	
+		{
+			popNode();
+		}
+|	ExtrusionOrientationID() MFRotationToken()	
+		{
+			popNode();
+		}
+|	ExtrusionScaleID() MFVec2fToken()	
+		{
+			popNode();
+		}
+|	ExtrusionSpineID() MFVec3fToken()	
+		{
+			popNode();
+		}
+|	<ccw> bvalue=SFBoolToken()
+		{
+			((ExtrusionNode)getCurrentNode()).setCCW(bvalue);
+		}
+|	<convex> bvalue=SFBoolToken()
+		{
+			((ExtrusionNode)getCurrentNode()).setConvex(bvalue);
+		}
+|	<beginCap> bvalue=SFBoolToken()
+		{
+			((ExtrusionNode)getCurrentNode()).setBeginCap(bvalue);
+		}
+|	<endCap> bvalue=SFBoolToken()
+		{
+			((ExtrusionNode)getCurrentNode()).setEndCap(bvalue);
+		}
+|	<creaseAngle> fvalue=SFFloatToken()
+		{
+			((ExtrusionNode)getCurrentNode()).setCreaseAngle(fvalue);
+		}
+|	<solid> bvalue=SFBoolToken()
+		{
+			((ExtrusionNode)getCurrentNode()).setSolid(bvalue);
+		}
+}
+
+void ExtrusionID() :
+{}
+{
+	<Extrusion>
+		{
+			ExtrusionNode extrusion = new ExtrusionNode();
+			extrusion.setName(getDefName());
+			addNode(extrusion);
+			pushNode(extrusion, parserTypeExtrusion);
+		}
+}
+
+void Extrusion() :
+{}
+{
+	ExtrusionID() NodeBegin() (ExtrusionElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+///////////////////////////////////////////////
+//	Fog
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Fog				: "Fog" >
+|	< fogType			: "fogType" >
+|	< visibilityRange	: "visibilityRange" >
+}
+
+void FogElement() :
+{
+	String	svalue;
+	float	fvalue;
+	float	value3[] = new float[3];
+}
+{
+	<color> SFColorToken(value3)
+		{
+			((FogNode)getCurrentNode()).setColor(value3);
+		}
+|	<fogType> svalue=SFStringToken()
+		{
+			((FogNode)getCurrentNode()).setFogType(svalue);
+		}
+|	<visibilityRange> fvalue=SFFloatToken()
+		{
+			((FogNode)getCurrentNode()).setVisibilityRange(fvalue);
+		}
+}
+
+void FogID() :
+{}
+{
+	<Fog>
+		{
+			FogNode fog = new FogNode();
+			fog.setName(getDefName());
+			addNode(fog);
+			pushNode(fog, parserTypeFog);
+		}
+}
+
+void Fog() :
+{}
+{
+	FogID() NodeBegin() (FogElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	FontStyle
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< FontStyle		: "FontStyle" >
+|	< justify		: "justify" >
+|	< family		: "family" >
+|	< style			: "style" >
+|	< horizontal	: "horizontal" >
+|	< leftToRight	: "leftToRight" >
+|	< topToBottom	: "topToBottom" >
+|	< language		: "language" >
+|	< spacing		: "spacing" >
+}
+
+void FontStyleFamilyID() :
+{}
+{
+	<family>
+		{
+			pushNode(getCurrentNode(), parserTypeFontStyleFamily);
+		}
+}
+
+void FontStyleJustifyID() :
+{}
+{
+	<justify>
+		{
+			pushNode(getCurrentNode(), parserTypeFontStyleJustify);
+		}
+}
+
+void FontStyleElement() :
+{
+	String	value;
+	boolean	bvalue;
+	float	fvalue;
+}
+{
+	FontStyleFamilyID() MFStringToken()	
+		{
+			popNode();
+		}
+|	FontStyleJustifyID() MFStringToken()	
+		{
+			popNode();
+		}
+|	<language> value=SFStringToken()
+		{
+			((FontStyleNode)getCurrentNode()).setLanguage(value);
+		}
+|	<style> value=SFStringToken()
+		{
+			((FontStyleNode)getCurrentNode()).setStyle(value);
+		}
+|	<horizontal> bvalue=SFBoolToken()
+		{
+			((FontStyleNode)getCurrentNode()).setHorizontal(bvalue);
+		}
+|	<leftToRight> bvalue=SFBoolToken()
+		{
+			((FontStyleNode)getCurrentNode()).setLeftToRight(bvalue);
+		}
+|	<topToBottom> bvalue=SFBoolToken()
+		{
+			((FontStyleNode)getCurrentNode()).setTopToBottom(bvalue);
+		}
+|	<size> fvalue=SFFloatToken()
+		{
+			((FontStyleNode)getCurrentNode()).setSize(fvalue);
+		}
+|	<spacing> fvalue=SFFloatToken()
+		{
+			((FontStyleNode)getCurrentNode()).setSpacing(fvalue);
+		}
+}
+
+void FontStyleID() :
+{}
+{
+	<FontStyle>
+		{
+			FontStyleNode fontStyle = new FontStyleNode();
+			fontStyle.setName(getDefName());
+			addNode(fontStyle);
+			pushNode(fontStyle, parserTypeFontStyle);
+		}
+}
+
+void FontStyle() :
+{}
+{
+	FontStyleID() NodeBegin() (FontStyleElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Group
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Group		: "Group" >
+}
+
+void GroupElement() :
+{
+	float	vec[] = new float[3];
+}
+{
+	<bboxCenter> SFVec3fToken(vec)
+		{
+			((GroupNode)getCurrentNode()).setBoundingBoxCenter(vec);
+		}
+|	<bboxSize> SFVec3fToken(vec)
+		{
+			((GroupNode)getCurrentNode()).setBoundingBoxSize(vec);
+		}
+|	Children()
+|	AddChildren()
+|	RemoveChildren()
+}
+
+void GroupID() :
+{
+	String name = null;
+}
+{
+	<Group>
+		{
+			GroupNode group = new GroupNode();
+			group.setName(getDefName());
+			addNode(group);
+			pushNode(group, parserTypeGroup);
+		}
+}
+
+void Group() :
+{}
+{
+	GroupID() NodeBegin() (GroupElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	ImageTexture
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< ImageTexture		: "ImageTexture" >
+|	< repeatS			: "repeatS" >
+|	< repeatT			: "repeatT" >
+}
+
+void ImageTextureURLID() :
+{}
+{
+	<url>
+		{
+			pushNode(getCurrentNode(), parserTypeImageTextureURL);
+		}
+}
+
+void ImageTextureElement() :
+{
+	boolean	bvalue;
+}
+{
+	ImageTextureURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	<repeatS> bvalue=SFBoolToken()
+		{
+			((ImageTextureNode)getCurrentNode()).setRepeatS(bvalue);
+		}
+|	<repeatT> bvalue=SFBoolToken()
+		{
+			((ImageTextureNode)getCurrentNode()).setRepeatT(bvalue);
+		}
+}
+
+void ImageTextureID() :
+{}
+{
+	<ImageTexture>
+		{
+			ImageTextureNode texture = new ImageTextureNode();
+			texture.setName(getDefName());
+			addNode(texture);
+			pushNode(texture, parserTypeImageTexture);
+		}
+}
+
+void ImageTexture() :
+{}
+{
+	ImageTextureID() NodeBegin() (ImageTextureElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	IndexedFaceset
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< IndexedFaceSet	: "IndexedFaceSet" >
+|	< coord				: "coord" >
+|	< normal			: "normal" >
+|	< texCoord			: "texCoord" >
+|	< coordIndex		: "coordIndex" >
+|	< colorIndex		: "colorIndex" >
+|	< texCoordIndex		: "texCoordIndex" >
+|	< normalIndex		: "normalIndex" >
+|	< convex			: "convex" >
+}
+
+void IdxFaceSetCoordIndexID() :
+{}
+{
+	<coordIndex>
+		{
+			pushNode(getCurrentNode(), parserTypeIdxFaceSetCoordIndex);
+		}
+}
+
+void IdxFaceSetColorIndexID() :
+{}
+{
+	<colorIndex>
+		{
+			pushNode(getCurrentNode(), parserTypeIdxFaceSetColorIndex);
+		}
+}
+
+void IdxFaceSetNormalIndexID() :
+{}
+{
+	<normalIndex>
+		{
+			pushNode(getCurrentNode(), parserTypeIdxFaceSetNormalIndex);
+		}
+}
+
+void IdxFaceSetTexCoordIndexID() :
+{}
+{
+	<texCoordIndex>
+		{
+			pushNode(getCurrentNode(), parserTypeIdxFaceSetTexCoordIndex);
+		}
+}
+
+void IdxFaceSetElement() :
+{
+	boolean	ok;
+	float	angle;
+}
+{
+	<coord>		((Def())* Coordinate() | Use() | <NULL>)
+|	<normal>		((Def())* Normal() | Use() | <NULL>)
+|	<color>		((Def())* Color() | Use() | <NULL>)
+|	<texCoord>	((Def())* TextureCoordinate() | Use() | <NULL>)
+|	IdxFaceSetCoordIndexID() MFInt32Token()
+	{
+		popNode();
+	}
+|	IdxFaceSetTexCoordIndexID() MFInt32Token()
+	{
+		popNode();
+	}
+|	IdxFaceSetColorIndexID() MFInt32Token()
+	{
+		popNode();
+	}
+|	IdxFaceSetNormalIndexID() MFInt32Token()
+	{
+		popNode();
+	}
+|	<creaseAngle> angle=SFFloatToken()
+	{
+		((IndexedFaceSetNode)getCurrentNode()).setCreaseAngle(angle);
+	}
+|	<ccw> ok=SFBoolToken()
+	{
+		((IndexedFaceSetNode)getCurrentNode()).setCCW(ok);
+	}
+|	<solid> ok=SFBoolToken()
+	{
+		((IndexedFaceSetNode)getCurrentNode()).setSolid(ok);
+	}
+|	<convex> ok=SFBoolToken()
+	{
+		((IndexedFaceSetNode)getCurrentNode()).setConvex(ok);
+	}
+|	<colorPerVertex> ok=SFBoolToken()
+	{
+		((IndexedFaceSetNode)getCurrentNode()).setColorPerVertex(ok);
+	}
+|	<normalPerVertex>	ok=SFBoolToken()
+	{
+		((IndexedFaceSetNode)getCurrentNode()).setNormalPerVertex(ok);
+	}
+}
+
+void IdxFaceSetID() :
+{}
+{
+	<IndexedFaceSet>
+		{
+			IndexedFaceSetNode idxFaceset = new IndexedFaceSetNode();
+			idxFaceset.setName(getDefName());
+			addNode(idxFaceset);
+			pushNode(idxFaceset, parserTypeIdxFaceSet);
+		}
+}
+
+void IndexedFaceSet() :
+{}
+{
+	IdxFaceSetID() NodeBegin() (IdxFaceSetElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	IndexedFaceset
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< IndexedLineSet	: "IndexedLineSet" >
+}
+
+void IdxLineSetCoordIndexID() :
+{}
+{
+	<coordIndex>
+		{
+			pushNode(getCurrentNode(), parserTypeIdxLineSetCoordIndex);
+		}
+}
+
+void IdxLineSetColorIndexID() :
+{}
+{
+	<colorIndex>
+		{
+			pushNode(getCurrentNode(), parserTypeIdxLineSetColorIndex);
+		}
+}
+
+void IdxLineSetElement() :
+{
+	boolean	ok;
+	float	angle;
+}
+{
+	<coord> ((Def())* Coordinate() | Use() | <NULL>)
+|	<color> ((Def())* Color() | Use() | <NULL>)
+|	IdxLineSetCoordIndexID() MFInt32Token()
+	{
+		popNode();
+	}
+|	IdxLineSetColorIndexID() MFInt32Token()
+	{
+		popNode();
+	}
+|	<colorPerVertex> ok=SFBoolToken()
+	{
+		((IndexedLineSetNode)getCurrentNode()).setColorPerVertex(ok);
+	}
+}
+
+void IdxLineSetID() :
+{}
+{
+	<IndexedLineSet>
+		{
+			IndexedLineSetNode idxLineSet = new IndexedLineSetNode();
+			idxLineSet.setName(getDefName());
+			addNode(idxLineSet);
+			pushNode(idxLineSet, parserTypeIdxLineSet);
+		}
+}
+
+void IndexedLineSet() :
+{}
+{
+	IdxLineSetID() NodeBegin() (IdxLineSetElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Inline
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Inline		: "Inline" >
+}
+
+void InlineURLID() :
+{}
+{
+	<url>
+		{
+			pushNode(getCurrentNode(), parserTypeInlineURL);
+		}
+}
+
+void InlineElement() :
+{
+	float	vec[] = new float[3];
+	String	value;
+}
+{
+	InlineURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	<bboxCenter> SFVec3fToken(vec)
+		{
+			((InlineNode)getCurrentNode()).setBoundingBoxCenter(vec);
+		}
+|	<bboxSize> SFVec3fToken(vec)
+		{
+			((InlineNode)getCurrentNode()).setBoundingBoxSize(vec);
+		}
+}
+
+void InlineID() :
+{}
+{
+	<Inline>
+		{
+			InlineNode inline = new InlineNode();
+			inline.setName(getDefName());
+			addNode(inline);
+			pushNode(inline, parserTypeInline);
+		}
+}
+
+void Inline() :
+{}
+{
+	InlineID() NodeBegin() (InlineElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	LOD
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< LOD		: "LOD" >
+|	< center	: "center" >
+|	< range		: "range" >
+|	< level		: "level" >
+}
+
+void Level() :
+{}
+{
+	<level> ("[")* ((Def())* (ChildrenElement()))* ("]")*
+}
+
+void LODRangeID() :
+{}
+{
+	<range>
+		{
+			pushNode(getCurrentNode(), parserTypeLODRange);
+		}
+}
+
+void LODElement() :
+{
+	float vector[] = new float[3];
+}
+{
+	LODRangeID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	<center> SFVec3fToken(vector)
+		{
+			((LODNode)getCurrentNode()).setCenter(vector);
+		}
+|	Level()
+}
+
+void LODID() :
+{}
+{
+	<LOD>
+		{
+			LODNode lod = new LODNode();
+			lod.setName(getDefName());
+			addNode(lod);
+			pushNode(lod, parserTypeLOD);
+		}
+}
+
+void LOD() :
+{}
+{
+	LODID() NodeBegin() (LODElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Material
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< Material			: "Material" >
+|	< diffuseColor		: "diffuseColor" >
+|	< specularColor		: "specularColor" >
+|	< emissiveColor		: "emissiveColor" >
+|	< shininess			: "shininess" >
+|	< transparency		: "transparency" >
+}
+
+void MaterialElement() :
+{
+	float	color[] = new float[3];
+	float	value;
+}
+{
+	<ambientIntensity> value = SFFloatToken()
+		{
+			((MaterialNode)getCurrentNode()).setAmbientIntensity(value);
+		}
+|	<shininess> value = SFFloatToken()
+		{
+			((MaterialNode)getCurrentNode()).setShininess(value);
+		}
+|	<transparency> value = SFFloatToken()
+		{
+			((MaterialNode)getCurrentNode()).setTransparency(value);
+		}
+|	<diffuseColor> SFColorToken(color)
+		{
+			((MaterialNode)getCurrentNode()).setDiffuseColor(color);
+		}
+|	<specularColor> SFColorToken(color)
+		{
+			((MaterialNode)getCurrentNode()).setSpecularColor(color);
+		}
+|	<emissiveColor> SFColorToken(color)
+		{
+			((MaterialNode)getCurrentNode()).setEmissiveColor(color);
+		}
+}
+
+void MaterialID() :
+{}
+{
+	<Material>
+		{
+			MaterialNode mat = new MaterialNode();
+			mat.setName(getDefName());
+			addNode(mat);
+			pushNode(mat, parserTypeMaterial);
+		}
+}
+
+void Material() :
+{}
+{
+	MaterialID() NodeBegin() (MaterialElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	MovieTexture
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< MovieTexture		: "MovieTexture" >
+|	< speed				: "speed" >
+}
+
+void MovieTextureURLID() :
+{}
+{
+	<url>
+		{
+			pushNode(getCurrentNode(), parserTypeMovieTextureURL);
+		}
+}
+
+void MovieTextureElement() :
+{
+	boolean	bvalue;
+	double	dvalue;
+	float	fvalue;
+}
+{
+	MovieTextureURLID() MFStringToken()	
+		{
+			popNode();
+		}
+|	<repeatS> bvalue=SFBoolToken()
+		{
+			((MovieTextureNode)getCurrentNode()).setRepeatS(bvalue);
+		}
+|	<repeatT> bvalue=SFBoolToken()
+		{
+			((MovieTextureNode)getCurrentNode()).setRepeatT(bvalue);
+		}
+|	<loop> bvalue=SFBoolToken()
+		{
+			((MovieTextureNode)getCurrentNode()).setLoop(bvalue);
+		}
+|	<startTime> dvalue=SFTimeToken()
+		{
+			((MovieTextureNode)getCurrentNode()).setStartTime(dvalue);
+		}
+|	<stopTime> dvalue=SFTimeToken()
+		{
+			((MovieTextureNode)getCurrentNode()).setStopTime(dvalue);
+		}
+|	<speed> fvalue=SFFloatToken()
+		{
+			((MovieTextureNode)getCurrentNode()).setSpeed(fvalue);
+		}
+}
+
+void MovieTextureID() :
+{}
+{
+	<MovieTexture>
+		{
+			MovieTextureNode texture = new MovieTextureNode();
+			texture.setName(getDefName());
+			addNode(texture);
+			pushNode(texture, parserTypeMovieTexture);
+		}
+}
+
+void MovieTexture() :
+{}
+{
+	MovieTextureID() NodeBegin() (MovieTextureElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	NavigationInfo
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< NavigationInfo	: "NavigationInfo" >
+|	< avatarSize		: "avatarSize">
+|	< headlight			: "headlight" >
+|	< type				: "type" >
+|	< visibilityLimit	: "visibilityLimit" >
+}
+
+void NavigationInfoAvatarSizeID() :
+{}
+{
+	<avatarSize>
+		{
+			pushNode(getCurrentNode(), parserTypeNavigationInfoAvatarSize);
+		}
+}
+
+void NavigationInfoTypeID() :
+{}
+{
+	<type>
+		{
+			pushNode(getCurrentNode(), parserTypeNavigationInfoType);
+		}
+}
+
+void NavigationInfoID() :
+{}
+{
+	<NavigationInfo>
+		{
+			NavigationInfoNode navInfo = new NavigationInfoNode();
+			navInfo.setName(getDefName());
+			addNode(navInfo);
+			pushNode(navInfo, parserTypeNavigationInfo);
+		}
+}
+
+void NavigationInfoElement() :
+{
+	String	svalue;
+	boolean	bvalue;
+	float	fvalue;
+}
+{
+	NavigationInfoAvatarSizeID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	NavigationInfoTypeID() MFStringToken()	
+		{
+			popNode();
+		}
+|	<headlight> bvalue=SFBoolToken()	
+		{
+			((NavigationInfoNode)getCurrentNode()).setHeadlight(bvalue);
+		}
+|	<speed> fvalue=SFFloatToken()	
+		{
+			((NavigationInfoNode)getCurrentNode()).setSpeed(fvalue);
+		}
+|	<visibilityLimit> fvalue=SFFloatToken()	
+		{
+			((NavigationInfoNode)getCurrentNode()).setVisibilityLimit(fvalue);
+		}
+}
+
+void NavigationInfo() :
+{}
+{
+	NavigationInfoID() NodeBegin() (NavigationInfoElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Normal
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Normal	: "Normal" >
+|	< vector	: "vector" >
+}
+
+void NormalID() :
+{}
+{
+	<Normal>
+		{
+			NormalNode normal = new NormalNode();
+			normal.setName(getDefName());
+			addNode(normal);
+			pushNode(normal, parserTypeNormal);
+		}
+}
+
+void Normal() :
+{}
+{
+	NormalID() NodeBegin() <vector> MFVec3fToken() NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	NormalInterpolator
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< NormalInterpolator	: "NormalInterpolator" >
+}
+
+void NormalInterpolatorKeyID() :
+{}
+{
+	<key>
+		{
+			pushNode(getCurrentNode(), parserTypeNormalInterpolatorKey);
+		}
+}
+
+void NormalInterpolatorKeyValueID() :
+{}
+{
+	<keyValue>
+		{
+			pushNode(getCurrentNode(), parserTypeNormalInterpolatorKeyValue);
+		}
+}
+
+void NormalInterpolatorID() :
+{}
+{
+	<NormalInterpolator>
+		{
+			NormalInterpolatorNode normalInterp = new NormalInterpolatorNode();
+			normalInterp.setName(getDefName());
+			addNode(normalInterp);
+			pushNode(normalInterp, parserTypeNormalInterpolator);
+		}
+}
+
+void NormalInterpolatorElement() :
+{
+	float	value3f[] = new float[3];
+	float	value;
+	boolean ok;
+}
+{
+	NormalInterpolatorKeyID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	NormalInterpolatorKeyValueID() MFVec3fToken()	
+		{
+			popNode();
+		}
+}
+
+void NormalInterpolator() :
+{}
+{
+	NormalInterpolatorID() NodeBegin() (NormalInterpolatorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	OrientationInterpolator
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< OrientationInterpolator	: "OrientationInterpolator" >
+}
+
+void OrientationInterpolatorKeyID() :
+{}
+{
+	<key>
+		{
+			pushNode(getCurrentNode(), parserTypeOrientationInterpolatorKey);
+		}
+}
+
+void OrientationInterpolatorKeyValueID() :
+{}
+{
+	<keyValue>
+		{
+			pushNode(getCurrentNode(), parserTypeOrientationInterpolatorKeyValue);
+		}
+}
+
+void OrientationInterpolatorID() :
+{}
+{
+	<OrientationInterpolator>
+		{
+			OrientationInterpolatorNode oriInterp = new OrientationInterpolatorNode();
+			oriInterp.setName(getDefName());
+			addNode(oriInterp);
+			pushNode(oriInterp, parserTypeOrientationInterpolator);
+		}
+}
+
+void OrientationInterpolatorElement() :
+{
+}
+{
+	OrientationInterpolatorKeyID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	OrientationInterpolatorKeyValueID() MFRotationToken()	
+		{
+			popNode();
+		}
+}
+
+void OrientationInterpolator() :
+{}
+{
+	OrientationInterpolatorID() NodeBegin() (OrientationInterpolatorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	PixelTexture
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< PixelTexture		: "PixelTexture" >
+|	< image				: "image" >
+}
+
+void PixelTextureImageID() :
+{}
+{
+	<image>
+		{
+			pushNode(getCurrentNode(), parserTypePixelTextureImage);
+		}
+}
+
+void PixelTextureElement() :
+{
+	boolean	bvalue;
+}
+{
+	PixelTextureImageID() SFImageToken()	
+		{
+			popNode();
+		}
+|	<repeatS> bvalue=SFBoolToken()
+		{
+			((PixelTextureNode)getCurrentNode()).setRepeatS(bvalue);
+		}
+|	<repeatT> bvalue=SFBoolToken()
+		{
+			((PixelTextureNode)getCurrentNode()).setRepeatT(bvalue);
+		}
+}
+
+void PixelTextureID() :
+{}
+{
+	<PixelTexture>
+		{
+			PixelTextureNode texture = new PixelTextureNode();
+			texture.setName(getDefName());
+			addNode(texture);
+			pushNode(texture, parserTypePixelTexture);
+		}
+}
+
+void PixelTexture() :
+{}
+{
+	PixelTextureID() NodeBegin() (PixelTextureElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	PlaneSensor
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< PlaneSensor	: "PlaneSensor" >
+|	< minPosition	: "minPosition" >
+|	< maxPosition	: "maxPosition" >
+}
+
+void PlaneSensorElement() :
+{
+	boolean	bvalue;
+	float	fvalue;
+	float	v2value[] = new float[2];
+	float	v3value[] = new float[3];
+}
+{
+	<minPosition>	SFVec2fToken(v2value)
+		{
+			((PlaneSensorNode)getCurrentNode()).setMinPosition(v2value);
+		}
+|	<maxPosition>	SFVec2fToken(v2value)
+		{
+			((PlaneSensorNode)getCurrentNode()).setMaxPosition(v2value);
+		}
+|	<offset>		SFVec3fToken(v3value)
+		{
+			((PlaneSensorNode)getCurrentNode()).setOffset(v3value);
+		}
+|	<enabled>	bvalue = SFBoolToken()
+		{
+			((PlaneSensorNode)getCurrentNode()).setEnabled(bvalue);
+		}
+|	<autoOffset>	bvalue = SFBoolToken()
+		{
+			((PlaneSensorNode)getCurrentNode()).setAutoOffset(bvalue);
+		}
+}
+
+void PlaneSensorID() :
+{}
+{
+	<PlaneSensor>
+		{
+			PlaneSensorNode sensor = new PlaneSensorNode();
+			sensor.setName(getDefName());
+			addNode(sensor);
+			pushNode(sensor, parserTypePlaneSensor);
+		}
+}
+
+void PlaneSensor() :
+{}
+{
+	PlaneSensorID() NodeBegin() (PlaneSensorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	PointLight
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< PointLight		: "PointLight" >
+|	< location			: "location" >
+|	< attenuation		: "attenuation" >
+}
+
+void PointLightElement() :
+{
+	float	value3f[] = new float[3];
+	float	value;
+	boolean ok;
+}
+{
+	<on>	ok = SFBoolToken()
+		{
+			((PointLightNode)getCurrentNode()).setOn(ok);
+		}
+|	<intensity> value = SFFloatToken()
+		{
+			((PointLightNode)getCurrentNode()).setIntensity(value);
+		}
+|	<ambientIntensity> value = SFFloatToken()
+		{
+			((PointLightNode)getCurrentNode()).setAmbientIntensity(value);
+		}
+|	<color> SFColorToken(value3f)
+		{
+			((PointLightNode)getCurrentNode()).setColor(value3f);
+		}
+|	<radius> value = SFFloatToken()
+		{
+			((PointLightNode)getCurrentNode()).setRadius(value);
+		}
+|	<location> SFVec3fToken(value3f)
+		{
+			((PointLightNode)getCurrentNode()).setLocation(value3f);
+		}
+|	<attenuation> SFVec3fToken(value3f)
+		{
+			((PointLightNode)getCurrentNode()).setAttenuation(value3f);
+		}
+}
+
+void PointLightID() :
+{}
+{
+	<PointLight>
+		{
+			PointLightNode light = new PointLightNode();
+			light.setName(getDefName());
+			addNode(light);
+			pushNode(light, parserTypePointLight);
+		}
+}
+
+void PointLight() :
+{}
+{
+	PointLightID() NodeBegin() (PointLightElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	PointSet
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< PointSet		: "PointSet" >
+}
+
+void PointSetElement() :
+{
+}
+{
+	<color>	((Def())* Color() | Use() | <NULL>)
+|	<coord>	((Def())* Coordinate() | Use() | <NULL>)
+}
+
+void PointSetID() :
+{}
+{
+	<PointSet>
+		{
+			PointSetNode point = new PointSetNode();
+			point.setName(getDefName());
+			addNode(point);
+			pushNode(point, parserTypePointSet);
+		}
+}
+
+void PointSet() :
+{}
+{
+	PointSetID() NodeBegin() (PointSetElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	PositionInterpolator
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< PositionInterpolator	: "PositionInterpolator" >
+}
+
+void PositionInterpolatorKeyID() :
+{}
+{
+	<key>
+		{
+			pushNode(getCurrentNode(), parserTypePositionInterpolatorKey);
+		}
+}
+
+void PositionInterpolatorKeyValueID() :
+{}
+{
+	<keyValue>
+		{
+			pushNode(getCurrentNode(), parserTypePositionInterpolatorKeyValue);
+		}
+}
+
+void PositionInterpolatorID() :
+{}
+{
+	<PositionInterpolator>
+		{
+			PositionInterpolatorNode posInterp = new PositionInterpolatorNode();
+			posInterp.setName(getDefName());
+			addNode(posInterp);
+			pushNode(posInterp, parserTypePositionInterpolator);
+		}
+}
+
+void PositionInterpolatorElement() :
+{
+	float	value3f[] = new float[3];
+	float	value;
+	boolean ok;
+}
+{
+	PositionInterpolatorKeyID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	PositionInterpolatorKeyValueID() MFVec3fToken()	
+		{
+			popNode();
+		}
+}
+
+void PositionInterpolator() :
+{}
+{
+	PositionInterpolatorID() NodeBegin() (PositionInterpolatorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	ProximitySensor
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< ProximitySensor	: "ProximitySensor" >
+}
+
+void ProximitySensorElement() :
+{
+	boolean	bvalue;
+	float	fvalue;
+	float	v3value[] = new float[3];
+}
+{
+	<center>	SFVec3fToken(v3value)
+		{
+			((ProximitySensorNode)getCurrentNode()).setCenter(v3value);
+		}
+|	<size>		SFVec3fToken(v3value)
+		{
+			((ProximitySensorNode)getCurrentNode()).setSize(v3value);
+		}
+|	<enabled>	bvalue = SFBoolToken()
+		{
+			((ProximitySensorNode)getCurrentNode()).setEnabled(bvalue);
+		}
+}
+
+void ProximitySensorID() :
+{}
+{
+	<ProximitySensor>
+		{
+			ProximitySensorNode sensor = new ProximitySensorNode();
+			sensor.setName(getDefName());
+			addNode(sensor);
+			pushNode(sensor, parserTypeProximitySensor);
+		}
+}
+
+void ProximitySensor() :
+{}
+{
+	ProximitySensorID() NodeBegin() (ProximitySensorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	ScalarInterpolator
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< ScalarInterpolator	: "ScalarInterpolator" >
+}
+
+void ScalarInterpolatorKeyID() :
+{}
+{
+	<key>
+		{
+			pushNode(getCurrentNode(), parserTypeScalarInterpolatorKey);
+		}
+}
+
+void ScalarInterpolatorKeyValueID() :
+{}
+{
+	<keyValue>
+		{
+			pushNode(getCurrentNode(), parserTypeScalarInterpolatorKeyValue);
+		}
+}
+
+void ScalarInterpolatorID() :
+{}
+{
+	<ScalarInterpolator>
+		{
+			ScalarInterpolatorNode scalarInterp = new ScalarInterpolatorNode();
+			scalarInterp.setName(getDefName());
+			addNode(scalarInterp);
+			pushNode(scalarInterp, parserTypeScalarInterpolator);
+		}
+}
+
+void ScalarInterpolatorElement() :
+{
+}
+{
+	ScalarInterpolatorKeyID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	ScalarInterpolatorKeyValueID() MFFloatToken()	
+		{
+			popNode();
+		}
+}
+
+void ScalarInterpolator() :
+{}
+{
+	ScalarInterpolatorID() NodeBegin() (ScalarInterpolatorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Script
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Script		: "Script" >
+|	< directOutput	: "directOutput" >
+|	< mustEvaluate	: "mustEvaluate" >
+|	< eventIn		: "eventIn" >
+|	< eventOut		: "eventOut" >
+|	< field			: "field" >
+|	< SFBool		: "SFBool" >
+|	< SFColor		: "SFColor" >
+|	< SFFloat		: "SFFloat" >
+|	< SFInt32		: "SFInt32" >
+|	< SFNode		: "SFNode" >
+|	< SFRotation	: "SFRotation" >
+|	< SFString		: "SFString" >
+|	< SFTime		: "SFTime" >
+|	< SFVec2f		: "SFVec2f" >
+|	< SFVec3f		: "SFVec3f" >
+|	< MFColor		: "MFColor" >
+|	< MFFloat		: "MFFloat" >
+|	< MFInt32		: "MFInt32" >
+|	< MFNode		: "MFNode" >
+|	< MFRotation	: "MFRotation" >
+|	< MFString		: "MFString" >
+|	< MFTime		: "MFTime" >
+|	< MFVec2f		: "MFVec2f" >
+|	< MFVec3f		: "MFVec3f" >
+}
+
+String FieldName() :
+{
+	Token	t;
+}
+{
+	t=<ID>
+		{
+			return t.image;
+		}
+}
+
+void ScriptURLID() :
+{}
+{
+	<url>
+		{
+			pushNode(getCurrentNode(), parserTypeScriptURL);
+		}
+}
+
+void ScriptElement() :
+{
+	String		fieldTypeName;
+	String		fieldName;
+	String		eventInName;
+	String		eventOutName;
+	String		initialValue;
+	Node		instanceNode;
+	Node		node;
+
+	ScriptNode	script;
+
+	String		svalue;
+	boolean		bvalue;
+	float		fvalue;
+	double		dvalue;
+	int			ivalue;
+	float		value2[] = new float[2];
+	float		value3[] = new float[3];
+	float		value4[] = new float[4];
+}
+{
+	ScriptURLID() MFStringToken()
+		{
+			popNode();
+		}
+|	<directOutput> bvalue = SFBoolToken()
+		{
+			script = (ScriptNode)getCurrentNode();
+			script.setDirectOutput(bvalue);
+		}
+|	<mustEvaluate> bvalue = SFBoolToken()
+		{
+			script = (ScriptNode)getCurrentNode();
+			script.setMustEvaluate(bvalue);
+		}
+
+////////////////////////////////////
+// EventIn
+////////////////////////////////////
+
+|	LOOKAHEAD(2) <eventIn> <SFBool> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFBool value = new SFBool();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(2) <eventIn> <SFColor> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFColor value = new SFColor();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(2) <eventIn> <SFFloat> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFFloat value = new SFFloat();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(2) <eventIn> <SFInt32> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFInt32 value = new SFInt32();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(2) <eventIn> <SFRotation> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFRotation value = new SFRotation();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(2) <eventIn> <SFString> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFString value = new SFString();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(2) <eventIn> <SFTime> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFTime value = new SFTime();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(2) <eventIn> <SFVec2f> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFVec2f value = new SFVec2f();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(2) <eventIn> <SFVec3f> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFVec3f value = new SFVec3f();
+			script.addEventIn(eventInName, value);
+		}
+
+|	LOOKAHEAD(3) <eventIn> <MFColor> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFColor value = new MFColor();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(3) <eventIn> <MFFloat> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFFloat value = new MFFloat();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(3) <eventIn> <MFInt32> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFInt32 value = new MFInt32();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(3) <eventIn> <MFRotation> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFRotation value = new MFRotation();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(3) <eventIn> <MFString> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFString value = new MFString();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(3) <eventIn> <MFTime> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFTime value = new MFTime();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(3) <eventIn> <MFVec2f> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFVec2f value = new MFVec2f();
+			script.addEventIn(eventInName, value);
+		}
+|	LOOKAHEAD(3) <eventIn> <MFVec3f> eventInName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFVec3f value = new MFVec3f();
+			script.addEventIn(eventInName, value);
+		}
+
+////////////////////////////////////
+// EventOut
+////////////////////////////////////
+
+|	LOOKAHEAD(2) <eventOut> <SFBool> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFBool value = new SFBool();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(2) <eventOut> <SFColor> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFColor value = new SFColor();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(2) <eventOut> <SFFloat> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFFloat value = new SFFloat();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(2) <eventOut> <SFInt32> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFInt32 value = new SFInt32();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(2) <eventOut> <SFRotation> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFRotation value = new SFRotation();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(2) <eventOut> <SFString> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFString value = new SFString();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(2) <eventOut> <SFTime> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFTime value = new SFTime();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(2) <eventOut> <SFVec2f> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFVec2f value = new SFVec2f();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(2) <eventOut> <SFVec3f> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFVec3f value = new SFVec3f();
+			script.addEventOut(eventOutName, value);
+		}
+
+|	LOOKAHEAD(3) <eventOut> <MFColor> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFColor value = new MFColor();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(3) <eventOut> <MFFloat> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFFloat value = new MFFloat();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(3) <eventOut> <MFInt32> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFInt32 value = new MFInt32();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(3) <eventOut> <MFRotation> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFRotation value = new MFRotation();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(3) <eventOut> <MFString> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFString value = new MFString();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(3) <eventOut> <MFTime> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFTime value = new MFTime();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(3) <eventOut> <MFVec2f> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFVec2f value = new MFVec2f();
+			script.addEventOut(eventOutName, value);
+		}
+|	LOOKAHEAD(3) <eventOut> <MFVec3f> eventOutName=FieldName()
+		{
+			script = (ScriptNode)getCurrentNode();
+			MFVec3f value = new MFVec3f();
+			script.addEventOut(eventOutName, value);
+		}
+
+////////////////////////////////////
+// Field
+////////////////////////////////////
+
+|	LOOKAHEAD(2) <field> <SFBool> fieldName=FieldName() bvalue=SFBoolToken()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFBool value = new SFBool(bvalue);
+			script.addField(fieldName, value);
+		}
+|	LOOKAHEAD(2) <field> <SFColor> fieldName=FieldName() SFColorToken(value3)
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFColor value = new SFColor(value3);
+			script.addField(fieldName, value);
+		}
+|	LOOKAHEAD(2) <field> <SFFloat> fieldName=FieldName() fvalue=SFFloatToken()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFFloat value = new SFFloat(fvalue);
+			script.addField(fieldName, value);
+		}
+|	LOOKAHEAD(2) <field> <SFInt32> fieldName=FieldName() ivalue=SFInt32Token()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFInt32 value = new SFInt32(ivalue);
+			script.addField(fieldName, value);
+		}
+|	LOOKAHEAD(2) <field> <SFRotation> fieldName=FieldName() SFRotationToken(value4)
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFRotation value = new SFRotation(value4);
+			script.addField(fieldName, value);
+		}
+|	LOOKAHEAD(2) <field> <SFString> fieldName=FieldName() svalue=SFStringToken()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFString value = new SFString(svalue);
+			script.addField(fieldName, value);
+		}
+|	LOOKAHEAD(2) <field> <SFTime> fieldName=FieldName() dvalue=SFTimeToken()
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFTime value = new SFTime(dvalue);
+			script.addField(fieldName, value);
+		}
+|	LOOKAHEAD(2) <field> <SFVec2f> fieldName=FieldName() SFVec2fToken(value2)
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFVec2f value = new SFVec2f(value2);
+			script.addField(fieldName, value);
+		}
+|	LOOKAHEAD(2) <field> <SFVec3f> fieldName=FieldName() SFVec3fToken(value3)
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFVec3f value = new SFVec3f(value3);
+			script.addField(fieldName, value);
+		}
+|	LOOKAHEAD(2) <field> <SFNode> fieldName=FieldName() instanceNode=Use()
+		{
+			script = (ScriptNode)getCurrentNode();
+			node = instanceNode.getReferenceNode();
+			SFNode value = new SFNode(node);
+			script.addField(fieldName, value);
+			instanceNode.remove();
+		}
+|	LOOKAHEAD(2) <field> <SFNode> fieldName=FieldName() <NULL>
+		{
+			script = (ScriptNode)getCurrentNode();
+			SFNode value = new SFNode();
+			script.addField(fieldName, value);
+		}
+}
+
+void ScriptID() :
+{}
+{
+	<Script>
+		{
+			ScriptNode script = new ScriptNode();
+			script.setName(getDefName());
+			addNode(script);
+			pushNode(script, parserTypeScript);
+		}
+}
+
+void Script() :
+{}
+{
+	ScriptID() NodeBegin() (ScriptElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Sound
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< Sound			: "Sound" >
+|	< spatialize	: "spatialize" >
+|	< maxBack		: "maxBack" >
+|	< minBack		: "minBack" >
+|	< maxFront		: "maxFront" >
+|	< minFront		: "minFront" >
+|	< priority		: "priority" >
+|	< source		: "source" >
+}
+
+void SoundElement() :
+{
+	boolean	bvalue;
+	float	fvalue;
+	float	vector[] = new float[3];
+}
+{
+	<spatialize>	bvalue = SFBoolToken()
+		{
+			((SoundNode)getCurrentNode()).setSpatialize(bvalue);
+		}
+|	<intensity>	fvalue = SFFloatToken()
+		{
+			((SoundNode)getCurrentNode()).setIntensity(fvalue);
+		}
+|	<maxBack>	fvalue = SFFloatToken()
+		{
+			((SoundNode)getCurrentNode()).setMaxBack(fvalue);
+		}
+|	<minBack>	fvalue = SFFloatToken()
+		{
+			((SoundNode)getCurrentNode()).setMinBack(fvalue);
+		}
+|	<maxFront>	fvalue = SFFloatToken()
+		{
+			((SoundNode)getCurrentNode()).setMaxFront(fvalue);
+		}
+|	<minFront>	fvalue = SFFloatToken()
+		{
+			((SoundNode)getCurrentNode()).setMinFront(fvalue);
+		}
+|	<priority>	fvalue = SFFloatToken()
+		{
+			((SoundNode)getCurrentNode()).setPriority(fvalue);
+		}
+|	<direction>	SFVec3fToken(vector)
+		{
+			((SoundNode)getCurrentNode()).setDirection(vector);
+		}
+|	<location>	SFVec3fToken(vector)
+		{
+			((SoundNode)getCurrentNode()).setLocation(vector);
+		}
+|	<source> ((Def())* AudioClip() | Use() | <NULL>)
+}
+
+void SoundID() :
+{}
+{
+	<Sound>
+		{
+			SoundNode sound = new SoundNode();
+			sound.setName(getDefName());
+			addNode(sound);
+			pushNode(sound, parserTypeSound);
+		}
+}
+
+void Sound() :
+{}
+{
+	SoundID() NodeBegin() (SoundElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Sphere
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Sphere	: "Sphere" >
+}
+
+void SphereElement() :
+{
+	float	value;
+}
+{
+	<radius> value=SFFloatToken()
+		{
+			((SphereNode)getCurrentNode()).setRadius(value);
+		}
+}
+
+void SphereID() :
+{}
+{
+	<Sphere>
+		{
+			SphereNode sphere = new SphereNode();
+			sphere.setName(getDefName());
+			addNode(sphere);
+			pushNode(sphere, parserTypeSphere);
+		}
+}
+
+void Sphere() :
+{}
+{
+	SphereID() NodeBegin() (SphereElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	SphereSensor
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< SphereSensor	: "SphereSensor" >
+}
+
+void SphereSensorElement() :
+{
+	boolean	bvalue;
+	float	rotvalue[] = new float[4];
+}
+{
+	<offset>		SFRotationToken(rotvalue)
+		{
+			((SphereSensorNode)getCurrentNode()).setOffset(rotvalue);
+		}
+|	<enabled>		bvalue = SFBoolToken()
+		{
+			((SphereSensorNode)getCurrentNode()).setEnabled(bvalue);
+		}
+|	<autoOffset>	bvalue = SFBoolToken()
+		{
+			((SphereSensorNode)getCurrentNode()).setAutoOffset(bvalue);
+		}
+}
+
+void SphereSensorID() :
+{}
+{
+	<SphereSensor>
+		{
+			SphereSensorNode sensor = new SphereSensorNode();
+			sensor.setName(getDefName());
+			addNode(sensor);
+			pushNode(sensor, parserTypeSphereSensor);
+		}
+}
+
+void SphereSensor() :
+{}
+{
+	SphereSensorID() NodeBegin() (SphereSensorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	SpotLight
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< SpotLight			: "SpotLight" >
+|	< beamWidth			: "beamWidth" >
+|	< cutOffAngle		: "cutOffAngle" >
+}
+
+void SpotLightElement() :
+{
+	float	value3f[] = new float[3];
+	float	value;
+	boolean ok;
+}
+{
+	<on>	ok = SFBoolToken()
+		{
+			((SpotLightNode)getCurrentNode()).setOn(ok);
+		}
+|	<intensity> value = SFFloatToken()
+		{
+			((SpotLightNode)getCurrentNode()).setIntensity(value);
+		}
+|	<ambientIntensity> value = SFFloatToken()
+		{
+			((SpotLightNode)getCurrentNode()).setAmbientIntensity(value);
+		}
+|	<beamWidth> value = SFFloatToken()
+		{
+			((SpotLightNode)getCurrentNode()).setBeamWidth(value);
+		}
+|	<cutOffAngle> value = SFFloatToken()
+		{
+			((SpotLightNode)getCurrentNode()).setCutOffAngle(value);
+		}
+|	<color> SFColorToken(value3f)
+		{
+			((SpotLightNode)getCurrentNode()).setColor(value3f);
+		}
+|	<direction> SFVec3fToken(value3f)
+		{
+			((SpotLightNode)getCurrentNode()).setDirection(value3f);
+		}
+|	<location> SFVec3fToken(value3f)
+		{
+			((SpotLightNode)getCurrentNode()).setLocation(value3f);
+		}
+|	<attenuation> SFVec3fToken(value3f)
+		{
+			((SpotLightNode)getCurrentNode()).setAttenuation(value3f);
+		}
+|	<radius> value = SFFloatToken()
+		{
+			((SpotLightNode)getCurrentNode()).setRadius(value);
+		}
+}
+
+void SpotLightID() :
+{}
+{
+	<SpotLight>
+		{
+			SpotLightNode light = new SpotLightNode();
+			light.setName(getDefName());
+			addNode(light);
+			pushNode(light, parserTypeSpotLight);
+		}
+}
+
+void SpotLight() :
+{}
+{
+	SpotLightID() NodeBegin() (SpotLightElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Shape
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Shape			: "Shape" >
+|	< appearance	: "appearance" >
+|	< geometry		: "geometry" >
+}
+
+void ShapeElement() :
+{
+}
+{
+	<geometry>		((Def())* GeometryNode() | Use() | <NULL>)
+|	<appearance>	((Def())* Appearance() | Use() | <NULL>)
+}
+
+void ShapeID() :
+{}
+{
+	<Shape>
+		{
+			ShapeNode shape = new ShapeNode();
+			shape.setName(getDefName());
+			addNode(shape);
+			pushNode(shape, parserTypeShape);
+		}
+}
+
+void Shape() :
+{}
+{
+	ShapeID() NodeBegin() (ShapeElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Switch
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Switch		: "Switch" >
+|	< whichChoice	: "whichChoice" >
+|	< choice		: "choice" >
+}
+
+void Choice() :
+{}
+{
+	<choice> ("[")* ((Def())* (ChildrenElement()))* ("]")*
+}
+
+void SwitchElement() :
+{
+	int	value;
+}
+{
+	<whichChoice> value=SFInt32Token()
+		{
+			((SwitchNode)getCurrentNode()).setWhichChoice(value);
+		}
+|	Choice()
+}
+
+void SwitchID() :
+{}
+{
+	<Switch>
+		{
+			SwitchNode snode = new SwitchNode();
+			snode.setName(getDefName());
+			addNode(snode);
+			pushNode(snode, parserTypeSwitch);
+		}
+}
+
+void Switch() :
+{}
+{
+	SwitchID() NodeBegin() (SwitchElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Text
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< Text		: "Text" >
+|	< string	: "string" >
+|	< length	: "length" >
+|	< maxExtent	: "maxExtent" >
+|	< fontStyle	: "fontStyle" >
+}
+
+void TextStringID() :
+{}
+{
+	<string>
+		{
+			pushNode(getCurrentNode(), parserTypeTextString);
+		}
+}
+
+void TextLengthID() :
+{}
+{
+	<length>
+		{
+			pushNode(getCurrentNode(), parserTypeTextLength);
+		}
+}
+
+void TextElement() :
+{
+	float	fvalue;
+}
+{
+	TextStringID() MFStringToken()	
+		{
+			popNode();
+		}
+|	TextLengthID() MFFloatToken()	
+		{
+			popNode();
+		}
+|	<maxExtent> fvalue=SFFloatToken()	
+		{
+			((TextNode)getCurrentNode()).setMaxExtent(fvalue);
+		}
+|	<fontStyle>	((Def())* FontStyle() | Use() | <NULL>)
+}
+
+void TextID() :
+{}
+{
+	<Text>
+		{
+			TextNode text = new TextNode();
+			text.setName(getDefName());
+			addNode(text);
+			pushNode(text, parserTypeText);
+		}
+}
+
+void Text() :
+{}
+{
+	TextID() NodeBegin() (TextElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	TextureCoordinate
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< TextureCoordinate	: "TextureCoordinate" >
+}
+
+void TextureCoordinateID() :
+{}
+{
+	<TextureCoordinate>
+		{
+			TextureCoordinateNode texCoord = new TextureCoordinateNode();
+			texCoord.setName(getDefName());
+			addNode(texCoord);
+			pushNode(texCoord, parserTypeTextureCoordinate);
+		}
+}
+
+void TextureCoordinate() :
+{}
+{
+	TextureCoordinateID() NodeBegin() <point> MFVec2fToken() NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	TextureTransform
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< TextureTransform			: "TextureTransform" >
+}
+
+void TextureTransformElement() :
+{
+	float	vec[] = new float[2];
+	float	fvalue;
+}
+{
+	<translation> SFVec2fToken(vec)
+		{
+			((TextureTransformNode)getCurrentNode()).setTranslation(vec);
+		}
+
+|	<rotation> fvalue=SFFloatToken()
+		{
+			((TextureTransformNode)getCurrentNode()).setRotation(fvalue);
+		}
+|	<scale> SFVec2fToken(vec)
+		{
+			((TextureTransformNode)getCurrentNode()).setScale(vec);
+		}
+|	<center> SFVec2fToken(vec)
+		{
+			((TextureTransformNode)getCurrentNode()).setCenter(vec);
+		}
+}
+
+void TextureTransformID() :
+{
+}
+{
+	<TextureTransform>
+		{
+			TextureTransformNode textureTransform = new TextureTransformNode();
+			textureTransform.setName(getDefName());
+			addNode(textureTransform);
+			pushNode(textureTransform, parserTypeTextureTransform);
+		}
+}
+
+void TextureTransform() :
+{}
+{
+	TextureTransformID() NodeBegin() (TextureTransformElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	TimeSensor
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< TimeSensor		: "TimeSensor" >
+|	< cycleInterval		: "cycleInterval" >
+}
+
+void TimeSensorElement() :
+{
+	float	fvalue;
+	boolean bvalue;
+}
+{
+	<enabled> bvalue = SFBoolToken()
+		{
+			((TimeSensorNode)getCurrentNode()).setEnabled(bvalue);
+		}
+|	<loop> bvalue = SFBoolToken()
+		{
+			((TimeSensorNode)getCurrentNode()).setLoop(bvalue);
+		}
+|	<cycleInterval> fvalue = SFFloatToken()
+		{
+			((TimeSensorNode)getCurrentNode()).setCycleInterval(fvalue);
+		}
+|	<startTime> fvalue = SFFloatToken()
+		{
+			((TimeSensorNode)getCurrentNode()).setStartTime(fvalue);
+		}
+|	<stopTime> fvalue = SFFloatToken()
+		{
+			((TimeSensorNode)getCurrentNode()).setStopTime(fvalue);
+		}
+}
+
+void TimeSensorID() :
+{}
+{
+	<TimeSensor>
+		{
+			TimeSensorNode sensor = new TimeSensorNode();
+			sensor.setName(getDefName());
+			addNode(sensor);
+			pushNode(sensor, parserTypeTimeSensor);
+		}
+}
+
+void TimeSensor() :
+{}
+{
+	TimeSensorID() NodeBegin() (TimeSensorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	TouchSensor
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< TouchSensor	: "TouchSensor" >
+}
+
+void TouchSensorElement() :
+{
+	boolean	bvalue;
+}
+{
+	<enabled>		bvalue = SFBoolToken()
+		{
+			((TouchSensorNode)getCurrentNode()).setEnabled(bvalue);
+		}
+}
+
+void TouchSensorID() :
+{}
+{
+	<TouchSensor>
+		{
+			TouchSensorNode sensor = new TouchSensorNode();
+			sensor.setName(getDefName());
+			addNode(sensor);
+			pushNode(sensor, parserTypeTouchSensor);
+		}
+}
+
+void TouchSensor() :
+{}
+{
+	TouchSensorID() NodeBegin() (TouchSensorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Transform
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< Transform			: "Transform" >
+|	< rotation			: "rotation" >
+|	< scale				: "scale" >
+|	< scaleOrientation	: "scaleOrientation" >
+|	< translation		: "translation" >
+}
+
+void TransformElement() :
+{
+	float	vec[] = new float[3];
+	float	rot[] = new float[4];
+}
+{
+	<translation> SFVec3fToken(vec)
+		{
+			((TransformNode)getCurrentNode()).setTranslation(vec);
+		}
+
+|	<rotation> SFRotationToken(rot)
+		{
+			((TransformNode)getCurrentNode()).setRotation(rot);
+		}
+|	<scale> SFVec3fToken(vec)
+		{
+			((TransformNode)getCurrentNode()).setScale(vec);
+		}
+|	<scaleOrientation> SFRotationToken(rot)
+		{
+			((TransformNode)getCurrentNode()).setScaleOrientation(rot);
+		}
+|	<center> SFVec3fToken(vec)
+		{
+			((TransformNode)getCurrentNode()).setCenter(vec);
+		}
+|	<bboxCenter> SFVec3fToken(vec)
+		{
+			((TransformNode)getCurrentNode()).setBoundingBoxCenter(vec);
+		}
+|	<bboxSize> SFVec3fToken(vec)
+		{
+			((TransformNode)getCurrentNode()).setBoundingBoxSize(vec);
+		}
+|	Children()
+|	AddChildren()
+|	RemoveChildren()
+}
+
+void TransformID() :
+{
+	String name = null;
+}
+{
+	<Transform>
+		{
+			TransformNode transform = new TransformNode();
+			transform.setName(getDefName());
+			addNode(transform);
+			pushNode(transform, parserTypeTransform);
+		}
+}
+
+void Transform() :
+{}
+{
+	TransformID() NodeBegin() (TransformElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	Viewpoint
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< Viewpoint			: "Viewpoint" >
+|	< position			: "position" >
+|	< orientation		: "orientation" >
+|	< fieldOfView		: "fieldOfView" >
+|	< jump				: "jump" >
+}
+
+void ViewpointElement() :
+{
+	float	vec[] = new float[3];
+	float	rot[] = new float[4];
+	float	fov;
+	boolean ok;
+	String	string;
+}
+{
+	<position> SFVec3fToken(vec)
+		{
+			((ViewpointNode)getCurrentNode()).setPosition(vec);
+		}
+|	<orientation> SFRotationToken(rot)
+		{
+			((ViewpointNode)getCurrentNode()).setOrientation(rot);
+		}
+|	<fieldOfView> fov = SFFloatToken()
+		{
+			((ViewpointNode)getCurrentNode()).setFieldOfView(fov);
+		}
+|	<jump>	ok = SFBoolToken()
+		{
+			((ViewpointNode)getCurrentNode()).setJump(ok);
+		}
+|	<description> string = SFStringToken()
+		{
+			((ViewpointNode)getCurrentNode()).setDescription(string);
+		}
+}
+
+void ViewpointID() :
+{}
+{
+	<Viewpoint>
+		{
+			ViewpointNode view = new ViewpointNode();
+			view.setName(getDefName());
+			addNode(view);
+			pushNode(view, parserTypeViewpoint);
+		}
+}
+
+void Viewpoint() :
+{}
+{
+	ViewpointID() NodeBegin() (ViewpointElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	VisibilitySensor
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< VisibilitySensor	: "VisibilitySensor" >
+}
+
+void VisibilitySensorElement() :
+{
+	boolean	bvalue;
+	float	v3value[] = new float[3];
+}
+{
+	<center>	SFVec3fToken(v3value)
+		{
+			((VisibilitySensorNode)getCurrentNode()).setCenter(v3value);
+		}
+|	<size>		SFVec3fToken(v3value)
+		{
+			((VisibilitySensorNode)getCurrentNode()).setSize(v3value);
+		}
+|	<enabled>	bvalue = SFBoolToken()
+		{
+			((VisibilitySensorNode)getCurrentNode()).setEnabled(bvalue);
+		}
+}
+
+void VisibilitySensorID() :
+{}
+{
+	<VisibilitySensor>
+		{
+			VisibilitySensorNode sensor = new VisibilitySensorNode();
+			sensor.setName(getDefName());
+			addNode(sensor);
+			pushNode(sensor, parserTypeVisibilitySensor);
+		}
+}
+
+void VisibilitySensor() :
+{}
+{
+	VisibilitySensorID() NodeBegin() (VisibilitySensorElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//	WorldInfo
+///////////////////////////////////////////////
+
+TOKEN : 
+{
+	< WorldInfo		: "WorldInfo" >
+|	< title			: "title" >
+|	< info			: "info" >
+}
+
+void WorldInfoInfoID() :
+{}
+{
+	<info>
+		{
+			WorldInfoNode winfo = (WorldInfoNode)getCurrentNode();
+			pushNode(winfo, parserTypeWorldInfoInfo);
+		}
+}
+
+void WorldInfoElement() :
+{
+	String	string;
+}
+{
+	<title> string = SFStringToken()
+		{
+			((WorldInfoNode)getCurrentNode()).setTitle(string);
+		}
+|	WorldInfoInfoID() MFStringToken()
+		{
+			popNode();
+		}
+}
+
+void WorldInfoID() :
+{}
+{
+	<WorldInfo>
+		{
+			WorldInfoNode winfo = new WorldInfoNode();
+			winfo.setName(getDefName());
+			addNode(winfo);
+			pushNode(winfo,parserTypeWorldInfo);
+		}
+}
+
+void WorldInfo() :
+{}
+{
+	WorldInfoID() NodeBegin() (WorldInfoElement())* NodeEnd()
+		{
+			getCurrentNode().initialize();
+			popNode();
+		}
+}
+
+///////////////////////////////////////////////
+//
+//	General Tokens
+//
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< NUMBER			:	(["+","-"])?( ["0"-"9"] )+ >
+|	< ID				:	["a"-"z","A"-"Z", "!", "$", "%", "&", "*", "/", "^", "_", "-", "|", "~"] 
+							( ["a"-"z","A"-"Z","0"-"9", "!", "$", "%", "&", "*", "/", "^", "_", "-", "|", "~"] )* >
+|
+	< STRING			:
+      "\""
+      (   (~["\"","\\","\n","\r"])
+        | ("\\"
+            ( ["n","t","b","r","f","\\","'","\""]
+            | ["0"-"7"] ( ["0"-"7"] )?
+            | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+            )
+          )
+      )*
+      "\""
+	>
+|	< FLOAT_NUMBER		:	(["+","-"])?(["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+							| (["+","-"])?"." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+							| (["+","-"])?(["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+	>
+|	< HEX_NUMBER		: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+ >
+
+|	< EXPONENT			:	["e","E"] (["+","-"])? (["0"-"9"])+ >
+}
+
+void Input() :
+{}
+{
+  ((Node()) | Route())* <EOF>
+}

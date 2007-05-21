@@ -1,0 +1,404 @@
+options {
+  STATIC = false;
+  LOOKAHEAD = 1;
+  DEBUG_PARSER = false;
+  ERROR_REPORTING = true;
+  USER_TOKEN_MANAGER = false;
+  USER_CHAR_STREAM = false;
+  JAVA_UNICODE_ESCAPE = false;
+  UNICODE_INPUT = false;
+}
+
+PARSER_BEGIN(STLAsciiParser)
+
+package org.cybergarage.x3d.parser.threedsystems;
+
+import org.cybergarage.x3d.node.*;
+
+public class STLAsciiParser {
+
+	private RootNode		mRootNode;
+	private ShapeNode		mCurrentShapeNode;
+	
+	private boolean		mHasFaceColor;
+	private float			mPrevFaceColor[] = new float[3];
+	private int				mSolidFaceCount;
+		
+	public STLAsciiParser () {
+	}
+
+	public void initialize() {
+		mRootNode = new RootNode();
+		setCurrentShapeNode(null);
+		setPrevFaceColor(1.0f, 1.0f, 1.0f);
+	}
+
+	public ShapeNode createShapeNode() {
+		ShapeNode shape = new ShapeNode();
+		IndexedFaceSetNode idxFaceSetNode = new IndexedFaceSetNode();
+		shape.addChildNode(idxFaceSetNode);
+		idxFaceSetNode.addChildNode(new CoordinateNode());
+		idxFaceSetNode.addChildNode(new ColorNode());
+		idxFaceSetNode.addChildNode(new NormalNode());
+		idxFaceSetNode.setColorPerVertex(false);
+		idxFaceSetNode.setNormalPerVertex(true);
+		return shape;
+	}
+
+	public int getNShapeNodes() {
+		return mRootNode.getNChildNodes();
+	}
+
+	public ShapeNode getShapeNodes() {
+		return mRootNode.getShapeNodes();
+	}
+
+	public void addShapeNode(ShapeNode node) {
+		mRootNode.addChildNode(node);
+	}
+
+
+	public void setSolidFaceCount(int n) {
+		mSolidFaceCount = n;
+	}
+
+	public int getSolidFaceCount() {
+		return mSolidFaceCount;
+	}
+
+	
+	public void setPrevFaceColor(float r, float g, float b) {
+		mPrevFaceColor[0] = r;
+		mPrevFaceColor[1] = g;
+		mPrevFaceColor[2] = b;
+	}
+
+	public void getPrevFaceColor(float color[]) {
+		color[0] = mPrevFaceColor[0];
+		color[1] = mPrevFaceColor[1];
+		color[2] = mPrevFaceColor[2];
+	}
+
+
+	public boolean hasFaceColor() {
+		return mHasFaceColor;
+	}
+
+	public void setFaceColorFlag(boolean flag) {
+		mHasFaceColor = flag;
+	}
+
+	
+	public void setCurrentShapeNode(ShapeNode node) {
+		mCurrentShapeNode = node;
+	}
+
+	public ShapeNode getCurrentShapeNode() {
+		return mCurrentShapeNode;
+	}
+
+	private IndexedFaceSetNode getCurrentIndexedFaceSetNode() {
+		return getCurrentShapeNode().getIndexedFaceSetNodes();
+	} 
+
+	private CoordinateNode getCurrentCoordinateNode() {
+		return getCurrentIndexedFaceSetNode().getCoordinateNodes();
+	}
+
+	private ColorNode getCurrentColorNode() {
+		return getCurrentIndexedFaceSetNode().getColorNodes();
+	}
+
+	private NormalNode getCurrentNormalNode() {
+		return getCurrentIndexedFaceSetNode().getNormalNodes();
+	}
+	
+	private void addCoodinate(float x, float y, float z) {
+		getCurrentCoordinateNode().addPoint(x, y, z);
+	}
+
+	private int getNCoodinates() {
+		return getCurrentCoordinateNode().getNPoints();
+	}
+
+	private void addColor(float r, float g, float b) {
+		getCurrentColorNode().addColor(r, g, b);
+	}
+
+	private int getNColors() {
+		return getCurrentColorNode().getNColors();
+	}
+
+	private void addNormal(float x, float y, float z) {
+		getCurrentNormalNode().addVector(x, y, z);
+	}
+
+	private int getNNormals() {
+		return getCurrentNormalNode().getNVectors();
+	}
+
+	private void addCoordIndex(int index) {
+		getCurrentIndexedFaceSetNode().addCoordIndex(index);
+	}
+
+	public int getNCoordIndices() {
+		return getCurrentIndexedFaceSetNode().getNCoordIndices();
+	}
+
+	public int getCoordIndex(int n) {
+		return getCurrentIndexedFaceSetNode().getCoordIndex(n);
+	}
+			
+	
+	private void addNormalIndex(int index) {
+		getCurrentIndexedFaceSetNode().addNormalIndex(index);
+	}
+	public int getNNormalIndices() {
+		return getCurrentIndexedFaceSetNode().getNNormalIndices();
+	}
+
+	public int getNormalIndex(int n) {
+		return getCurrentIndexedFaceSetNode().getNormalIndex(n);
+	}
+
+
+	private void addTexCoordIndex(int index) {
+		getCurrentIndexedFaceSetNode().addTexCoordIndex(index);
+	}
+
+	public int getNTexCoordIndices() {
+		return getCurrentIndexedFaceSetNode().getNTexCoordIndices();
+	}
+
+	public int getTexCoordIndex(int n) {
+		return getCurrentIndexedFaceSetNode().getTexCoordIndex(n);
+	}
+}
+
+PARSER_END(STLAsciiParser)
+
+///////////////////////////////////////////////
+//	SKIP
+///////////////////////////////////////////////
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+}
+
+///////////////////////////////////////////////
+//	IntegerToken / ValueToken / NameToken
+///////////////////////////////////////////////
+
+float ValueToken() :
+{
+	Token t;
+	Integer intObj;
+	Float floatObj;
+}
+{
+	t=<NUMBER>
+		{
+			intObj = new Integer(t.image);
+			return (float)intObj.intValue();
+			//return (float)Integer.parseInt(t.image);
+		}
+|	t=<FLOAT_NUMBER>
+		{
+			floatObj = new Float(t.image);
+			return floatObj.floatValue();
+			//return Float.parseFloat(t.image);
+		}
+}
+
+String NameToken() :
+{
+	Token	t;
+}
+{
+	t=<NAME>
+		{
+			return t.image;
+		}
+}
+
+///////////////////////////////////////////////
+// STL Ascii
+///////////////////////////////////////////////
+
+void STLAscii() :
+{
+}
+{
+	(Solid())*
+}
+
+///////////////////////////////////////////////
+// Solid
+///////////////////////////////////////////////
+
+void SolidBegin() :
+{
+	String name;
+}
+{
+	"solid" name=NameToken()
+		{
+			ShapeNode shape = createShapeNode();
+			shape.setName(name);
+			addShapeNode(shape);
+			setCurrentShapeNode(shape);
+			setSolidFaceCount(0);
+		}
+}
+
+void SolidEnd() :
+{
+	String name;
+}
+{
+	"endsolid" (name=NameToken())*
+		{
+		}
+}
+
+void Solid() :
+{
+}
+{
+	SolidBegin() 
+		((Color())? Face())* 
+	SolidEnd()
+}
+
+///////////////////////////////////////////////
+//	Face
+///////////////////////////////////////////////
+
+void Facet() :
+{
+}
+{
+	"facet" 
+		{
+			setFaceColorFlag(false);
+		}
+}
+
+void EndFacet() :
+{
+	int	faceCount;
+	float color[] = new float[3];
+	NormalNode normalNode;
+	float vector[] = new float[3];
+}
+{
+	"endfacet" 
+		{
+			faceCount = getSolidFaceCount();
+
+			if (hasFaceColor() == false) {
+				getPrevFaceColor(color);
+				addColor(color[0], color[1], color[2]);
+			}
+			
+			int nNormals = getNNormals();
+			if (nNormals == 1) {
+				normalNode = getCurrentNormalNode();
+				normalNode.getVector(0, vector);
+				addNormal(vector[0], vector[1], vector[2]);
+				addNormal(vector[0], vector[1], vector[2]);
+			}
+							
+			for (int n=0; n<3; n++)
+				addCoordIndex((faceCount*3) + n);
+			addCoordIndex(-1);
+			
+			setSolidFaceCount(faceCount + 1);
+		}
+}
+
+void Face() :
+{
+}
+{
+	Facet()
+		(Normal())*
+//		(Normal() Normal() Normal())?
+		"outer" "loop"
+			Vertex() Vertex() Vertex()
+		"endloop"
+	EndFacet()
+}
+
+///////////////////////////////////////////////
+//	Color
+///////////////////////////////////////////////
+
+void Color() :
+{
+	float r, g, b;
+}
+{
+	"color" r=ValueToken() g=ValueToken() b=ValueToken()
+		{
+			addColor(r, g, b);
+			setFaceColorFlag(true);
+			setPrevFaceColor(r, g, b);
+		}
+}
+
+///////////////////////////////////////////////
+//	Vertex
+///////////////////////////////////////////////
+
+void Vertex() :
+{
+	float x, y, z;
+}
+{
+	"vertex" x=ValueToken() y=ValueToken() z=ValueToken()
+		{
+			addCoodinate(x, y, z);
+		}
+}
+
+///////////////////////////////////////////////
+//	Normal
+///////////////////////////////////////////////
+
+void Normal() :
+{
+	float x, y, z;
+}
+{
+	"normal" x=ValueToken() y=ValueToken() z=ValueToken()
+		{
+			addNormal(x, y, z);
+		}
+}
+
+///////////////////////////////////////////////
+//
+//	General Tokens
+//
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< NUMBER		:	( ["0"-"9"] )+ >
+|	< NAME			:	( ["0"-"9","A"-"Z","a"-"z"] )+ >
+|	< FLOAT_NUMBER	:	(["+","-"])?(["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+						| (["+","-"])?"." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+						| (["+","-"])?(["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])? >
+|	< EXPONENT		:	["e","E"] (["+","-"])? (["0"-"9"])+ >
+}
+
+void Input() :
+{}
+{
+  STLAscii() <EOF>
+}

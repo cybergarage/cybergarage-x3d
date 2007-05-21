@@ -1,0 +1,18 @@
+#/bin/sh
+rm *.class
+rm field/*.class
+rm j3d/*.class
+rm j3d/loader/*.class
+rm node/*.class
+rm image/*.class
+rm parser/vrml97/*.class
+rm parser/wavefront/*.class
+rm parser/autodesk/*.class
+rm parser/sense8/*.class
+rm parser/threedsystems/*.class
+rm parser/x3d/*.class
+rm route/*.class
+rm util/*.class
+rm sensor/*.class
+rm share/*.class
+rm share/object/*.class

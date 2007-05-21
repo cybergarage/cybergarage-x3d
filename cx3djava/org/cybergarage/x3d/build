@@ -1,0 +1,37 @@
+#/bin/sh
+rm *.class
+rm field/*.class
+rm j3d/*.class
+rm j3d/loader/*.class
+rm node/*.class
+rm image/*.class
+rm parser/vrml97/*.class
+rm parser/wavefront/*.class
+rm parser/autodesk/*.class
+rm parser/sense8/*.class
+rm parser/threedsystems/*.class
+rm parser/x3d/*.class
+rm route/*.class
+rm util/*.class
+rm sensor/*.class
+rm share/*.class
+rm share/object/*.class
+rm xml/*.class
+javac -O *.java
+javac -O field/*.java
+javac -O j3d/*.java
+javac -O j3d/loader/*.java
+javac -O node/*.java
+javac -O image/*.java
+javac -O parser/vrml97/*.java
+javac -O parser/wavefront/*.java
+javac -O parser/autodesk/*.java
+javac -O parser/sense8/*.java
+javac -O parser/threedsystems/*.java
+javac -O parser/x3d/*.java
+javac -O route/*.java
+javac -O util/*.java
+javac -O sensor/*.java
+javac -O share/*.java
+javac -O share/object/*.java
+javac -O xml/*.java

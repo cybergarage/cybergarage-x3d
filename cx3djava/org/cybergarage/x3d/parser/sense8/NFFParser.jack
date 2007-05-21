@@ -1,0 +1,522 @@
+options {
+  STATIC = false;
+  LOOKAHEAD = 1;
+  DEBUG_PARSER = false;
+  ERROR_REPORTING = true;
+  USER_TOKEN_MANAGER = false;
+  USER_CHAR_STREAM = false;
+  JAVA_UNICODE_ESCAPE = false;
+  UNICODE_INPUT = false;
+}
+
+PARSER_BEGIN(NFFParser)
+
+package org.cybergarage.x3d.parser.sense8;
+
+import org.cybergarage.x3d.node.*;
+import org.cybergarage.x3d.util.*;
+
+public class NFFParser {
+
+	private ShapeNode				mShapeNode;
+	private IndexedFaceSetNode mIdxFaceSetNode;
+	
+	public NFFParser () {
+	}
+
+	public void initialize() {
+		mShapeNode = new ShapeNode();
+		mIdxFaceSetNode = new IndexedFaceSetNode();
+		mIdxFaceSetNode.setColorPerVertex(false);
+		mIdxFaceSetNode.setNormalPerVertex(true);
+		mShapeNode.addChildNode(mIdxFaceSetNode);
+		mIdxFaceSetNode.addChildNode(new CoordinateNode());
+		//mIdxFaceSetNode.addChildNode(new NormalNode());
+		mIdxFaceSetNode.addChildNode(new ColorNode());
+	}
+
+	public ShapeNode getShapeNode() {
+		return mShapeNode;
+	}
+	
+	public IndexedFaceSetNode getIndexedFaceSetNode() {
+		return mIdxFaceSetNode;
+	} 
+
+	private CoordinateNode getCoordinateNode() {
+		return getIndexedFaceSetNode().getCoordinateNodes();
+	}
+
+	private NormalNode getNormalNode() {
+		return getIndexedFaceSetNode().getNormalNodes();
+	}
+
+	private ColorNode getColorNode() {
+		return getIndexedFaceSetNode().getColorNodes();
+	}
+	
+	private void addCoordinate(float x, float y, float z) {
+		getCoordinateNode().addPoint(x, y, z);
+	}
+
+	private void addNormal(float x, float y, float z) {
+		getNormalNode().addVector(x, y, z);
+	}
+
+	private void addColor(float color[]) {
+		getColorNode().addColor(color);
+	}
+
+	
+	private void addCoordIndex(int index) {
+		getIndexedFaceSetNode().addCoordIndex(index);
+	}
+
+	public int getNCoordIndices() {
+		return getIndexedFaceSetNode().getNCoordIndices();
+	}
+
+	public int getCoordIndex(int n) {
+		return getIndexedFaceSetNode().getCoordIndex(n);
+	}
+			
+	
+	private void addNormalIndex(int index) {
+		getIndexedFaceSetNode().addNormalIndex(index);
+	}
+	public int getNNormalIndices() {
+		return getIndexedFaceSetNode().getNNormalIndices();
+	}
+
+	public int getNormalIndex(int n) {
+		return getIndexedFaceSetNode().getNormalIndex(n);
+	}
+
+
+	private void addTexCoordIndex(int index) {
+		getIndexedFaceSetNode().addTexCoordIndex(index);
+	}
+
+	public int getNTexCoordIndices() {
+		return getIndexedFaceSetNode().getNTexCoordIndices();
+	}
+
+	public int getTexCoordIndex(int n) {
+		return getIndexedFaceSetNode().getTexCoordIndex(n);
+	}
+}
+
+PARSER_END(NFFParser)
+
+///////////////////////////////////////////////
+//	SKIP
+///////////////////////////////////////////////
+
+SKIP :
+{
+  " "
+| "\t"
+| "\r"
+| <COMMENT : "//" (~["\n", "\r"])* ("\n" | "\r\n") >
+}
+
+///////////////////////////////////////////////
+//	IntegerToken / FloatToken / NameToken
+///////////////////////////////////////////////
+
+int IndexToken() :
+{
+	Token t;
+}
+{
+	t=<INDEX>
+		{
+			return Integer.parseInt(t.image);
+		}
+}
+
+int NumberToken() :
+{
+	Token t;
+}
+{
+	t=<NUMBER>
+		{
+			return Integer.parseInt(t.image);
+		}
+}
+
+float FloatToken() :
+{
+	Token t;
+	Float floatObj;
+}
+{
+	t=<VALUE>
+		{
+			floatObj = new Float(t.image);
+			return floatObj.floatValue();
+			//return Float.parseFloat(t.image);
+		}
+}
+
+float[] ColorToken() :
+{
+	String	colorString;
+	int		colorValue;
+	float		color[];
+	Token		t;
+}
+{
+	t=<COLOR>
+		{
+			colorString = t.image.substring(2);
+			colorValue = Integer.parseInt(colorString, 16);
+			Debug.message("color = 0x" + Integer.toHexString(colorValue));
+			color = new float[3];
+			if (colorString.length() == 3) {
+				color[0] = (float)((colorValue & 0xF00) >> 8)/ 127.0f;
+				color[1] = (float)((colorValue & 0x0F0) >> 4)/ 127.0f;
+				color[2] = (float)((colorValue & 0x00F) >> 0)/ 127.0f;
+			}
+			else {
+				color[0] = (float)((colorValue & 0xFF0000) >> 16)/ 255.0f;
+				color[1] = (float)((colorValue & 0x00FF00) >> 8 )/ 255.0f;
+				color[2] = (float)((colorValue & 0x0000FF) >> 0 )/ 255.0f;
+			}
+			return color;
+		}
+}
+
+String NameToken() :
+{
+	Token	t;
+}
+{
+	t=<NAME>
+		{
+			return t.image;
+		}
+}
+
+///////////////////////////////////////////////
+// NFF
+///////////////////////////////////////////////
+
+void NFF() :
+{
+}
+{
+	(NFFElement())*
+}
+
+void NFFElement() :
+{
+}
+{
+	Header()
+|	Version()
+|	Viewpos()
+|	Viewdir()
+|	Object()
+|	<EOL>
+}
+
+///////////////////////////////////////////////
+//	Header
+///////////////////////////////////////////////
+
+void Header() :
+{
+}
+{
+	"nff" <EOL>
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	Version
+///////////////////////////////////////////////
+
+void Version() :
+{
+	float ver;
+}
+{
+	"version" ver=FloatToken() <EOL>
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	Viewpos
+///////////////////////////////////////////////
+
+void Viewpos() :
+{
+	float x, y, z;
+}
+{
+	"viewpos" x=FloatToken() y=FloatToken() z=FloatToken() <EOL>
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	Viewdir
+///////////////////////////////////////////////
+
+void Viewdir() :
+{
+	float x, y, z;
+}
+{
+	"viewdir" x=FloatToken() y=FloatToken() z=FloatToken() <EOL>
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	Viewdir
+///////////////////////////////////////////////
+
+void Object() :
+{
+}
+{
+	ObjectName() (MaterialName())? DefVertex() DefPoly()
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	ObjectName
+///////////////////////////////////////////////
+
+void ObjectName() :
+{
+	String objName;
+}
+{
+	objName=NameToken() <EOL>
+		{
+			getShapeNode().setName(objName);
+			Debug.message("NAME = " + objName);
+		}
+}
+
+///////////////////////////////////////////////
+//	MaterialTable
+///////////////////////////////////////////////
+
+void MaterialName() :
+{
+	String matName;
+}
+{
+	"mtable" matName=NameToken() <EOL>
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	DefVertex
+///////////////////////////////////////////////
+
+void DefVertex() :
+{
+}
+{
+	NVertices() (Vertex())+
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	Vertex
+///////////////////////////////////////////////
+
+void NVertices() :
+{
+	int nVertices;
+}
+{
+	nVertices=IndexToken() <EOL>
+		{
+			Debug.message("number of vertices = " + nVertices);
+		}
+}
+
+void Vertex() :
+{
+}
+{
+	VertexPos() (VertexNormal() | "N" | VertexColor() | VertexTexCoord())* <EOL>
+		{
+		}
+}
+
+void VertexPos() :
+{
+	float vx, vy, vz;
+}
+{
+	vx=FloatToken() vy=FloatToken() vz=FloatToken()
+		{
+			addCoordinate(vx, vy, vz);
+			Debug.message(vx + ", " + vy + ", " + vz);
+		}
+}
+
+void VertexNormal() :
+{
+	float nx, ny, nz;
+}
+{
+	"norm" nx=FloatToken() ny=FloatToken() nz=FloatToken()
+		{
+			//getNormalNode().addVector(x, y, z);
+		}
+}
+
+void VertexColor() :
+{
+	float color[];
+}
+{
+	"rgb" color=ColorToken()
+		{
+			//getColorNode().addColor(color);
+		}
+}
+
+void VertexTexCoord() :
+{
+	float u, v;
+}
+{
+	"uv" u=FloatToken() v=FloatToken()
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	DefPoly
+///////////////////////////////////////////////
+
+void DefPoly() :
+{
+	int nPolys;
+}
+{
+	NPolys() (Poly())+
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//	Poly
+///////////////////////////////////////////////
+
+void NPolys() :
+{
+	int nPolys;
+}
+{
+	nPolys=IndexToken() <EOL>
+		{
+		}
+}
+
+void Poly() :
+{
+}
+{
+	Shape() ("both" | <TEXTURE> | Rot() | Scale() | Trans() | <POLYID> | <PORTAL>)* <EOL>
+		{
+		}
+}
+
+void Shape() :
+{
+	int	nIndices;
+	float	color[];
+}
+{
+	nIndices=IndexToken() (ShapeIndex())+ color=ColorToken()  
+		{
+			addColor(color);
+			addCoordIndex(-1);
+		}
+}
+
+void ShapeIndex() :
+{
+	int	index;
+}
+{
+	index=IndexToken()
+		{
+			addCoordIndex(index);
+		}
+}
+
+void Rot() :
+{
+	float angle;
+}
+{
+	"rot" angle=NumberToken()
+		{
+		}
+}
+
+void Scale() :
+{
+	float factor;
+}
+{
+	"scale" factor=NumberToken()
+		{
+		}
+}
+
+void Trans() :
+{
+	float x, y;
+}
+{
+	"trans" x=NumberToken() y=NumberToken()
+		{
+		}
+}
+
+///////////////////////////////////////////////
+//
+//	General Tokens
+//
+///////////////////////////////////////////////
+
+TOKEN :
+{
+	< INDEX			:	( ["0"-"9"] )+ >
+|	< NUMBER		:	( ["1"-"9"] ) ( ["0"-"9"] )* >
+|	< NAME			:	( ["A"-"Z","a"-"z"] )+ ( ["0"-"9","A"-"Z","a"-"z"] )* >
+|	< VALUE			:	(["+","-"])?(["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+							| (["+","-"])?"." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+							| (["+","-"])?(["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+	>
+|	< EXPONENT		:	["e","E"] (["+","-"])? (["0"-"9"])+ >
+|	< COLOR			: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+ >
+|	< TEXTURE		: ("_v_" | "_s_" | "_t_" | "_u_" | "_V_" | "_S_" | "_T_" | "_U_") ( ["0"-"9","A"-"Z","a"-"z"] )+ >
+|	< PORTAL		: "-" ( ["0"-"9","A"-"Z","a"-"z"] )+ >
+|	< POLYID		: "id=" ( ["0"-"9"] )+ >
+|	< EOL			: "\n" >
+}
+
+void Input() :
+{}
+{
+  NFF() <EOF>
+}
