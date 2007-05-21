@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry kind="src" path=""/>
+    <classpathentry kind="var" path="JRE_LIB" sourcepath="JRE_SRC"/>
+    <classpathentry kind="var" path="JAVA3D_LIB/j3daudio.jar"/>
+    <classpathentry kind="var" path="JAVA3D_LIB/j3dcore.jar"/>
+    <classpathentry kind="var" path="JAVA3D_LIB/j3dutils.jar"/>
+    <classpathentry kind="var" path="JAVA3D_LIB/vecmath.jar"/>
+    <classpathentry kind="src" path="/x3d"/>
+    <classpathentry kind="output" path=""/>
+</classpath>
