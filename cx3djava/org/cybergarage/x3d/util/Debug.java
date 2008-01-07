@@ -21,10 +21,6 @@ public final class Debug {
 	public static boolean isOn() {
 		return enabled;
 	}
-	public static final void assert(boolean b, String s) {
-		if (enabled && !b)
-			throw new AssertionException("CyberX3D assertion failed : " + s);
-	}
 	public static final void message(String s) {
 		if (enabled == true)
 			System.out.println("CyberX3D message : " + s);
