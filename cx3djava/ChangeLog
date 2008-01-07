@@ -1,0 +1,3 @@
+2008-01-08 Satoshi Konno <skonno@cybergarage.org>
+	* Deleted Assert.java and AssertException.java.
+	* Deleted Debug::assert().
