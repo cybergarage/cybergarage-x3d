@@ -1,3 +1,122 @@
 2008-01-08 Satoshi Konno <skonno@cybergarage.org>
 	* Deleted Assert.java and AssertException.java.
 	* Deleted Debug::assert().
+
+Release 1.0 (2003/11/10)
+	Renamed the package name as CyberX3D for Java
+	Changed the parser for X3D using Xerces instead of JavaCC. 
+	Changed the package from cv97 to org.cybergarage.x3d . 
+	Fixed some bugs. 
+
+Release 1.4 (2002/03/19)
+	* Changed the field access methods to get more performance. 
+	* Changed the pre-processor to read more comples PROTO defines. For example H-Anim. 
+	* Added Java3D loaders (VRML97, OBJ, NFF, DXF, 3DS, STL) 
+	* Rebuilded the paser codes using latest JavaCC 2.x.  
+	* Fixed some minor bugs. 
+
+Release 1.3 (2000/01/05)
+	* Supports Don Brutzman's draft X3D tagsets. 
+	* Changed the package name from 'vrml' to 'cv97' to avoid a collision with any vrml-java packages. 
+	* JSAI no longer is supported because the package name is changed. 
+	* Added the samples for X3D. 
+
+Release 1.2.2 (1999/11/28) 
+	* Added support for new loaders of Autodesk DXF, SLP format.  
+	* Changed some methods to support for JDK 1.1.x without Java3D.  
+
+Release 1.2.1 (1999/04/17)
+	* Added support for PixelTexture node for Java3D. 
+	* Added support for Texture2D in VRML97Saver class.  
+
+Release 1.2 (1999/03/07)
+	* Added support for new loaders of Autodesk 3DS, Wavefront OBJ and SENSE8 NFF.  
+	* Added support for LineStripArray, TriangleStripArray and TriangleFanArray of Java3D in VRML97 Saver class. 
+	* Fixed a bug of creating a Java3D node of a IndexedFaceSetNode. 
+
+Release 1.1.1 (1999/02/20)
+	* Fixed a bug of creating  a Java3D node of a IndexedFascSet node. 
+	* Fixed other minor bugs. 
+
+Release 1.1 (1999/01/23)
+	* Supported Java2 and Java3D final. 
+	* Supported more VRML97 nodes for Java3D  
+	* Added new Java3D interfaces, VRML97Loader and VRML97Saver. 
+	* Fixed some minor bugs. 
+
+Release 1.1 Beta2 (1998/10/13)
+	* Added support for Java3D Beta2 (a bug of Text3D etc.). 
+	* Fixed some minor bugs.
+	* Uploaded with a useful sample.
+
+Release 1.1 Beta1 (1998/09/23)
+	* Added support for  JDK 1.2 Beta4 and Java3D Beta1. 
+
+Release 1.1 Alpha4 (1998/05/29)
+	* Fixed bugs of Java Scripting. 
+	* Added Fastrak support. 
+
+Release 1.1 Alpha3 (1998/05/06)
+	* Added startSimulation() and stopSimulation in Scengraph  to execute the behaviors in threads. 
+	* Changed some class into threadable. 
+	* Fixed NullException bugs of Java3D when geometry nodes are removed. 
+	* Added a textureCoordinate support for IndexedFaceSet. 
+
+Release 1.1 Alpha2 (1998/04/11)
+	* Added support for IndexedLineSet, PointSet, Box, Cone, Cylinder, Sphere and ImageTexture for Java3D. 
+
+Release 1.1 Alpha1 (1998/04/04)
+	* Added Java3D support. 
+	* Changed parser algorithms for USE/DEF support. 
+	* Added setOption() in vrml.SceneGraph for PROTO support. 
+	* Fixed a bug of vrml.node.CylinderSensorNode which can not access the 'isActive' field normally. 
+
+Release 1.0.4a (1998/03/30)
+	* Fixed some preprocessor bugs for 'PROTO' keyword support (ex. coordIndex [0 , 1 , 2 , 3 , -1] --> coordIndex [0.0 , 1.0 , 2.0 , 3.0 , -1.0] ) 
+
+Release 1.0.4 (1998/03/15)
+	* Added 'PROTO' keyword support. 
+	* Fixed getRotation method of vrml.field.SFMatrix not to return a invalid (NaN) value. 
+
+Release 1.0.3b (1998/02/28)
+	* Fixed a loading bug that can't parse VRML files repeatedly. 
+	* Fixed a parser syntax so that it parse 'USE' keyword corectlly. 
+
+Release 1.0.3a (1998/02/26)
+	* Added 'USE' keyword support as instance node. 
+
+Release 1.0.3 (1998/02/14)
+	* Using JDK, I checked all classes whether the methods has no problem as standard Java specifications. 
+	* Changed all node class names. (ex. 'Viewpoint' class -> 'ViewpointNode' class) 
+	* Added 'nextSameType' and 'nextTraversalSameType' methods into Node class. 
+	* Removed overloaded methods of sub classes of Node class, 'next' and 'nextTraversal'. 
+
+Release 1.0.2 (1997/08/17)
+	* Conformed to JSI specification in more detail. 
+	* Changed event update algorithm. 
+	* Fixed 'getTransformMatrix' method of Node class. 
+
+Release 1.0.1 (1997/04/13)
+	* Added find* methods to SceneGraph class. 
+	* Added a 'nextTraversal' method to node classes. 
+	* Added a 'getMatrix' methods to Viewpoint class. 
+	* Added a 'getTransformMatrix' method to Node class. 
+	* Fixed the 'next' method of GroupingNode class. 
+
+Release1 (1997/04/01)
+	* Added support for Java in Script node. 
+	* Added a save method of SceneGraph class. 
+	* Fixed the other minor bugs. 
+
+Release beta1 (1997/03/06)
+	* All VRML nodes was supported. 
+	* Fixed the other minor bugs. 
+
+Release alpha2 (1997/02/12)
+	* Changed the package hierarchy into same VRML 2.0 specification. 
+	* Added support for TimeSensor and *Interpolator nodes. 
+	* Added support for route infomations. 
+	* Added update methods for node and route. 
+
+Release1 alpha1 (1997/02/01)
+	* The first release.
