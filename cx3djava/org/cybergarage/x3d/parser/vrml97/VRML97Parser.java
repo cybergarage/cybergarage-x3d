@@ -2,6 +2,7 @@
 package org.cybergarage.x3d.parser.vrml97;
 
 import java.io.*;
+import java.util.*;
 
 import org.cybergarage.x3d.field.*;
 import org.cybergarage.x3d.node.*;
