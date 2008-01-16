@@ -109,6 +109,19 @@ public class ShapeNode extends BoundedNode
 	}
 
 	////////////////////////////////////////////////
+	//	getGeometry*
+	////////////////////////////////////////////////
+
+	public Geometry3DNode getGeometry3D() 
+	{
+		for (Node node=getChildNodes(); node != null; node=node,next()) {
+			if (node.isGeometry3DNode())
+				return (Geometry3DNode)node;
+		}
+		return null;
+	}
+	
+	////////////////////////////////////////////////
 	//	Infomation
 	////////////////////////////////////////////////
 

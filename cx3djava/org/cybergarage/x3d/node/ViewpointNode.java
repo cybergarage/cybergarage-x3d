@@ -6,6 +6,9 @@
 *
 *	File : Viewpoint.java
 *
+*	2008/01/17
+*	- Added traslate() and rotate().
+*
 ******************************************************************/
 
 package org.cybergarage.x3d.node;
@@ -21,11 +24,11 @@ public class ViewpointNode extends BindableNode {
 	private String	orientationFieldName		= "orientation";
 	private String	fieldOfViewFieldName		= "fieldOfView";
 	private String	descriptionFieldName		= "description";
-	private String	jumpFieldName					= "jump";
+	private String	jumpFieldName				= "jump";
 
 	private SFVec3f		positionField;
 	private SFRotation	orientationField;
-	private SFString		descriptionField;
+	private SFString	descriptionField;
 	private SFFloat		fovField;
 	private SFBool		jumpField;
 
@@ -325,5 +328,37 @@ public class ViewpointNode extends BindableNode {
 		SFMatrix mx = new SFMatrix();
 		getMatrix(mx);
 		mx.getValue(value);
+	}
+
+	////////////////////////////////////////////////
+	//	translate
+	////////////////////////////////////////////////
+	
+	public void translate(float vector[]) 
+	{
+		float frame[][] = getFrame();
+		addPosition(vector, frame);
+	}
+
+	public void translate(SFVec3f vec) 
+	{
+		float frame[][] = getFrame();
+		float vector[] = vec.getValue();
+		addPosition(vector, frame);
+	}
+
+	////////////////////////////////////////////////
+	//	rotate
+	////////////////////////////////////////////////
+	
+	public void rotate(float rotation[]) 
+	{
+		addOrientation(rotation);
+	}
+
+	public void rotate(SFRotation rot) 
+	{
+		float rotation[] = rot.getValue();
+		addOrientation(rotation);
 	}
 }
