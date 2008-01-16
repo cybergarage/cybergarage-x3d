@@ -10,12 +10,13 @@
 
 package org.cybergarage.x3d.android;
 
+import java.nio.*;
 import javax.microedition.khronos.opengles.GL10;
 
 import org.cybergarage.x3d.node.*;
 
-public class BoxNodeObject extends GeometryNodeObject {
-
+public class BoxNodeObject extends GeometryNodeObject
+{
 	////////////////////////////////////////////////
 	//	Constructor
 	////////////////////////////////////////////////
@@ -68,14 +69,14 @@ public class BoxNodeObject extends GeometryNodeObject {
 
 	    for (int i = 0; i < 6; i++) {
 	    	gl.glNormal3f(n[i][0], n[i][1], n[i][2]);
-	    	//gl.glTexCoord2fv(t[0]);
-	    	gl.glVertex3f(v[faces[i][0]]);
-	    	//gl.glTexCoord2fv(t[1]);
-	    	gl.glVertex3f(v[faces[i][1]]);
-	    	//gl.glTexCoord2fv(t[2]);
-	    	gl.glVertex3f(v[faces[i][2]]);
-	    	//gl.glTexCoord2fv(t[3]);
-	    	gl.glVertex3f(v[faces[i][3]]);
+	    	gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, FloatBuffer.wrap(t[0]));
+	    	gl.glVertexPointer(3, GL10.GL_FLOAT, 0, FloatBuffer.wrap(v[faces[i][0]]));
+	    	gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, FloatBuffer.wrap(t[1]));
+	    	gl.glVertexPointer(3, GL10.GL_FLOAT, 0, FloatBuffer.wrap(v[faces[i][1]]));
+	    	gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, FloatBuffer.wrap(t[2]));
+	    	gl.glVertexPointer(3, GL10.GL_FLOAT, 0, FloatBuffer.wrap(v[faces[i][2]]));
+	    	gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, FloatBuffer.wrap(t[3]));
+	    	gl.glVertexPointer(3, GL10.GL_FLOAT, 0, FloatBuffer.wrap(v[faces[i][3]]));
 	    }
 	}
 	
