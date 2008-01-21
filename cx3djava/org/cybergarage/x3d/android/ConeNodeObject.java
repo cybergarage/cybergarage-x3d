@@ -14,7 +14,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import org.cybergarage.x3d.node.Node;
 
-public class ConeNodeObject extends GeometryNodeObject 
+public class ConeNodeObject 
 {
 	public ConeNodeObject()
 	{
@@ -24,7 +24,7 @@ public class ConeNodeObject extends GeometryNodeObject
 	//	Methods
 	////////////////////////////////////////////////
 
-	public void draw(GL10 gl, Node node)
+	final static public void draw(GL10 gl, Node node)
 	{
 	}
 }

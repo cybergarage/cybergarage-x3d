@@ -14,8 +14,8 @@ import javax.microedition.khronos.opengles.GL10;
 
 import org.cybergarage.x3d.node.*;
 
-public class IndexedLineSetNodeObject extends GeometryNodeObject {
-	
+public class IndexedLineSetNodeObject
+{
 	public IndexedLineSetNodeObject(IndexedLineSetNode node) 
 	{
 	}
@@ -24,7 +24,7 @@ public class IndexedLineSetNodeObject extends GeometryNodeObject {
 	//	Methods
 	////////////////////////////////////////////////
 
-	public void draw(GL10 gl, Node node)
+	final static public void draw(GL10 gl, Node node)
 	{
 	}
 }

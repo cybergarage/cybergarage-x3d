@@ -14,8 +14,8 @@ import javax.microedition.khronos.opengles.GL10;
 
 import org.cybergarage.x3d.node.Node;
 
-public class CylinderNodeObject extends GeometryNodeObject {
-
+public class CylinderNodeObject
+{
 	public CylinderNodeObject() 
 	{
 	}
@@ -24,7 +24,7 @@ public class CylinderNodeObject extends GeometryNodeObject {
 	//	Methods
 	////////////////////////////////////////////////
 
-	public void draw(GL10 gl, Node node)
+	final static public void draw(GL10 gl, Node node)
 	{
 	}
 }

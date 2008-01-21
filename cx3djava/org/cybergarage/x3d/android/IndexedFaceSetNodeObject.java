@@ -20,8 +20,8 @@ import javax.microedition.khronos.opengles.GL10;
 
 import org.cybergarage.x3d.node.*;
 
-public class IndexedFaceSetNodeObject extends GeometryNodeObject {
-	
+public class IndexedFaceSetNodeObject
+{
 	public IndexedFaceSetNodeObject() 
 	{
 	}
@@ -30,7 +30,7 @@ public class IndexedFaceSetNodeObject extends GeometryNodeObject {
 	//	Methods
 	////////////////////////////////////////////////
 
-	public void draw(GL10 gl, Node node)
+	final static public void draw(GL10 gl, Node node)
 	{
 	}
 }

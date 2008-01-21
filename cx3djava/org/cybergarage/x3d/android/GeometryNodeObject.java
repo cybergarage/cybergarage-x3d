@@ -11,10 +11,11 @@
 package org.cybergarage.x3d.android;
 
 import org.cybergarage.x3d.node.Node;
+import org.cybergarage.x3d.node.BoxNode;
 
 import javax.microedition.khronos.opengles.GL10;
 
-public abstract class GeometryNodeObject {
+public class GeometryNodeObject {
 
 	////////////////////////////////////////////////
 	//	Constructor
@@ -28,6 +29,10 @@ public abstract class GeometryNodeObject {
 	//	Methods
 	////////////////////////////////////////////////
 
-	public abstract void draw(GL10 gl, Node node);
+	final static public void draw(GL10 gl, Node node)
+	{
+		if (node instanceof BoxNode)
+			BoxNodeObject.draw(gl, node);
+	}
 }
 

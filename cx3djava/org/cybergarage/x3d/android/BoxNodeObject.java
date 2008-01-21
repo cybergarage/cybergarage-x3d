@@ -15,7 +15,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import org.cybergarage.x3d.node.*;
 
-public class BoxNodeObject extends GeometryNodeObject
+public class BoxNodeObject
 {
 	////////////////////////////////////////////////
 	//	Constructor
@@ -29,7 +29,7 @@ public class BoxNodeObject extends GeometryNodeObject
 	//	Methods
 	////////////////////////////////////////////////
 
-	public void draw(GL10 gl, Node node)
+	final static public void draw(GL10 gl, Node node)
 	{
 		BoxNode box = (BoxNode)node;
 	    drawBox(
@@ -42,7 +42,7 @@ public class BoxNodeObject extends GeometryNodeObject
 	    		box.getZ()/2.0f);
 	}
 	
-	private void drawBox(GL10 gl, float x0, float x1, float y0, float y1, float z0, float z1)
+	final static private void drawBox(GL10 gl, float x0, float x1, float y0, float y1, float z0, float z1)
 	{
 	    float n[][] = {
 				{0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
