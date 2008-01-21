@@ -8,6 +8,8 @@
 *
 *	2008/01/17
 *	- Added traslate() and rotate().
+*	2007/01/21
+*	- Added getValue(float[]).
 *
 ******************************************************************/
 
@@ -330,6 +332,12 @@ public class ViewpointNode extends BindableNode {
 		mx.getValue(value);
 	}
 
+	public void getMatrix(float value[]) {
+		SFMatrix mx = new SFMatrix();
+		getMatrix(mx);
+		mx.getValue(value);
+	}
+	
 	////////////////////////////////////////////////
 	//	translate
 	////////////////////////////////////////////////
