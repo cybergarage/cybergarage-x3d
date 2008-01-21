@@ -9,6 +9,8 @@
 *	03/17/04
 *	- Thanks for Simon Goodall <sg02r@ecs.soton.ac.uk>
 *	- Changed getChildNode(NodeType) to check the reference node type if the child node is the instance node.
+*	01/21/08
+*	- Added Node::getTransformMatrix(float[]).
 *
 ******************************************************************/
 
@@ -2958,6 +2960,12 @@ public abstract class Node extends BaseNode implements Runnable, NodeConstatns {
 		mx.getValue(value);
 	}
 
+	public void getTransformMatrix(float value[]) {
+		SFMatrix	mx = new SFMatrix();
+		getTransformMatrix(mx);
+		mx.getValue(value);
+	}
+	
 	////////////////////////////////////////////////
 	//	SceneGraph
 	////////////////////////////////////////////////
