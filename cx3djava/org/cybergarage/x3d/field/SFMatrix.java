@@ -6,6 +6,9 @@
 *
 *	File : SFMatrix.java
 *
+*	2007/01/21
+*	- Added getValue(float[]) and getValue(double[]).
+*
 ******************************************************************/
 
 package org.cybergarage.x3d.field;
@@ -186,6 +189,24 @@ public class SFMatrix extends Field {
 		}
 	}
 
+	public void getValue(double value[]) {
+		synchronized (mValue) {
+			for (int i=0; i<4; i++) {
+				for (int j=0; j<4; j++)
+					value[i*4+j] = mValue[i][j];
+			}
+		}
+	}
+
+	public void getValue(float value[]) {
+		synchronized (mValue) {
+			for (int i=0; i<4; i++) {
+				for (int j=0; j<4; j++)
+					value[i*4+j] = (float)mValue[i][j];
+			}
+		}
+	}
+	
 	public int getValueCount()
 	{
 		return 16;
