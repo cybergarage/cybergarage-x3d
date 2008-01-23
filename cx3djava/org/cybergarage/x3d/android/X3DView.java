@@ -21,6 +21,16 @@ import org.cybergarage.x3d.node.*;
 
 public class X3DView extends View
 {
+    ////////////////////////////////////////
+    // Member
+    ////////////////////////////////////////
+	
+	private	SceneGraph mSceneGraph = null;
+
+    ////////////////////////////////////////
+    // Constructor
+    ////////////////////////////////////////
+	
     /**
      * The View constructor is a good place to allocate our OpenGL context
      */
@@ -32,6 +42,8 @@ public class X3DView extends View
          * Create an OpenGL|ES context. This must be done only once, an
          * OpenGL contex is a somewhat heavy object.
          */
+        mSceneGraph = new SceneGraph();
+        
         mGLContext = new OpenGLContext(0);
         mAnimate = true;
     }
@@ -84,53 +96,24 @@ public class X3DView extends View
          */
         mGLContext.waitNative(canvas, this);
         
+    	drawSceneGraph(gl, mSceneGraph, OGL_RENDERING_TEXTURE);
+    	
             int w = getWidth();
             int h = getHeight();
-
-            /*
-             * Set the viewport. This doesn't have to be done each time
-             * draw() is called. Typically this is called when the view
-             * is resized.
-             */
-
-
+/*
             gl.glViewport(0, 0, w, h);
         
-            /*
-             * Set our projection matrix. This doesn't have to be done
-             * each time we draw, but usualy a new projection needs to be set
-             * when the viewport is resized.
-             */
-             
             float ratio = (float)w / h;
             gl.glMatrixMode(GL10.GL_PROJECTION);
             gl.glLoadIdentity();
             gl.glFrustumf(-ratio, ratio, -1, 1, 2, 12);
 
-            /*
-             * dithering is enabled by default in OpenGL, unfortunattely
-             * it has a significant impact on performace in software
-             * implementation. Often, it's better to just turn it off.
-             */
              gl.glDisable(GL10.GL_DITHER);
-
-            /*
-             * Usually, the first thing one might want to do is to clear
-             * the screen. The most efficient way of doing this is to use
-             * glClear(). However we must make sure to set the scissor
-             * correctly first. The scissor is always specified in window
-             * coordinates:
-             */
 
             gl.glClearColor(1,1,1,1);
             gl.glEnable(GL10.GL_SCISSOR_TEST);
             gl.glScissor(0, 0, w, h);
             gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
-
-
-            /*
-             * Now we're ready to draw some 3D object
-             */
 
             gl.glMatrixMode(GL10.GL_MODELVIEW);
             gl.glLoadIdentity();
@@ -147,7 +130,7 @@ public class X3DView extends View
             //drawSceneGraph();
             
             mAngle += 1.2f;
-
+*/
         /*
          * Once we're done with GL, we need to flush all GL commands and
          * make sure they complete before we can issue more native
@@ -183,6 +166,15 @@ public class X3DView extends View
     private long            mNextTime;
     private boolean         mAnimate;
   
+    ////////////////////////////////////////
+    // CyberX3D
+    ////////////////////////////////////////
+    
+	public SceneGraph getSceneGraph() 
+	{
+		return mSceneGraph;
+	}
+    
 	//////////////////////////////////////////////////////////
 	//  Constants
 	////////////////////////////////////////////////////////// 
@@ -195,7 +187,7 @@ public class X3DView extends View
 	//  MoveViewpoint
 	////////////////////////////////////////////////////////// 
 
-    public void UpdateViewport(GL10 gl, SceneGraph sg, int width, int height) 
+    public void updateViewport(GL10 gl, SceneGraph sg, int width, int height) 
 	{
 		float aspect = (float)width/(float)height;
 	
@@ -217,7 +209,7 @@ public class X3DView extends View
 	//  MoveViewpoint
 	////////////////////////////////////////////////////////// 
 
-    public void MoveViewpoint(GL10 gl, SceneGraph sg, int width, int height, int mosx, int mosy)
+    public void moveViewpoint(GL10 gl, SceneGraph sg, int width, int height, int mosx, int mosy)
 	{
 		ViewpointNode view = sg.getViewpointNode();
 		if (view == null)
@@ -250,7 +242,7 @@ public class X3DView extends View
 	static int gnLights;
 	static PointLightNode headLight;
 
-	public void PushLightNode(GL10 gl, LightNode lightNode)
+	public void pushLightNode(GL10 gl, LightNode lightNode)
 	{
 		if (!lightNode.isOn()) 
 			return;
@@ -367,7 +359,7 @@ public class X3DView extends View
 		}
 	}
 
-	public void PopLightNode(GL10 gl,LightNode lightNode)
+	public void popLightNode(GL10 gl,LightNode lightNode)
 	{
 		if (!lightNode.isOn()) 
 			return;
@@ -381,7 +373,7 @@ public class X3DView extends View
 			gl.glDisable(GL10.GL_LIGHT0+gnLights);
 	}
 
-	public void DrawShapeNode(GL10 gl, SceneGraph sg, ShapeNode shape, int drawMode)
+	public void drawShapeNode(GL10 gl, SceneGraph sg, ShapeNode shape, int drawMode)
 	{
 		gl.glPushMatrix ();
 
@@ -599,7 +591,7 @@ public class X3DView extends View
 	}
 
 
-	public void DrawNode(GL10 gl, SceneGraph sceneGraph, Node firstNode, int drawMode) 
+	public void drawNode(GL10 gl, SceneGraph sceneGraph, Node firstNode, int drawMode) 
 	{
 		if (firstNode == null)
 			return;
@@ -608,23 +600,23 @@ public class X3DView extends View
 
 		for (node = firstNode; node != null ; node=node.next()) {
 			if (node.isLightNode()) 
-				PushLightNode(gl, (LightNode)node);
+				pushLightNode(gl, (LightNode)node);
 		}
 
 		for (node = firstNode; node != null; node=node.next()) {
 			if (node.isShapeNode()) 
-				DrawShapeNode(gl, sceneGraph, (ShapeNode)node, drawMode);
+				drawShapeNode(gl, sceneGraph, (ShapeNode)node, drawMode);
 			else
-				DrawNode(gl, sceneGraph, node.getChildNodes(), drawMode);
+				drawNode(gl, sceneGraph, node.getChildNodes(), drawMode);
 		}
 
 		for (node = firstNode; node != null; node=node.next()) {
 			if (node.isLightNode()) 
-				PopLightNode(gl, (LightNode)node);
+				popLightNode(gl, (LightNode)node);
 		}
 	}
 
-	void DrawSceneGraph(GL10 gl, SceneGraph sg, int drawMode)
+	public void drawSceneGraph(GL10 gl, SceneGraph sg, int drawMode)
 	{
 		/////////////////////////////////
 		//	Headlight 
@@ -657,7 +649,7 @@ public class X3DView extends View
 		if (view != null) {
 			int	viewport[] = new int[4];
 			gl.glGetIntegerv(GL10.GL_VIEWPORT, viewport, 0);
-			UpdateViewport(gl, sg, viewport[2], viewport[3]);
+			updateViewport(gl, sg, viewport[2], viewport[3]);
 		}
 
 		/////////////////////////////////
@@ -722,7 +714,7 @@ public class X3DView extends View
 		//	General Node
 		/////////////////////////////////
 
-		DrawNode(gl, sg, sg.getNodes(), drawMode);
+		drawNode(gl, sg, sg.getNodes(), drawMode);
 
 		/////////////////////////////////
 		//	Headlight 
