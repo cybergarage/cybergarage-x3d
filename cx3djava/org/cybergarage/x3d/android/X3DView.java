@@ -42,7 +42,7 @@ public class X3DView extends View
          * Create an OpenGL|ES context. This must be done only once, an
          * OpenGL contex is a somewhat heavy object.
          */
-        mSceneGraph = new SceneGraph();
+        initSceneGraph();
         
         mGLContext = new OpenGLContext(0);
         mAnimate = true;
@@ -183,6 +183,20 @@ public class X3DView extends View
     static final int OGL_RENDERING_SHADE = 2;
     static final int OGL_RENDERING_TEXTURE = 3;
     
+	////////////////////////////////////////////////////////// 
+	//  DrawSceneGraph
+	////////////////////////////////////////////////////////// 
+
+    private int gnLights;
+	private PointLightNode headLight;
+	
+	private void initSceneGraph()
+	{
+        mSceneGraph = new SceneGraph();
+		gnLights = 10;
+		headLight = new PointLightNode();
+	}
+	
 	//////////////////////////////////////////////////////////
 	//  MoveViewpoint
 	////////////////////////////////////////////////////////// 
@@ -238,9 +252,6 @@ public class X3DView extends View
 	////////////////////////////////////////////////////////// 
 	//  DrawSceneGraph
 	////////////////////////////////////////////////////////// 
-
-	static int gnLights;
-	static PointLightNode headLight;
 
 	public void pushLightNode(GL10 gl, LightNode lightNode)
 	{
@@ -632,6 +643,7 @@ public class X3DView extends View
 			if (view == null)
 				view = sg.getDefaultViewpointNode();
 			view.getPosition(location);
+			headLight = new PointLightNode();
 			headLight.setLocation(location);
 			headLight.setAmbientIntensity(0.3f);
 			headLight.setIntensity(0.7f);
