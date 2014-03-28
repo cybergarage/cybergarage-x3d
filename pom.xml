@@ -1,0 +1,30 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.cybergarage.cyberx3d</groupId>
+  <artifactId>cyberx3d</artifactId>
+  <version>${cyberx3d.version}</version>
+  <packaging>pom</packaging>
+
+  <name>CyberX3D for Java</name>
+  <url>http://www.cybergarage.org/</url>
+
+  <properties>
+    <cyberx3d.version>1.4.1</cyberx3d.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <distributionManagement>
+    <repository>
+      <id>org.cybergarage</id>
+      <name>Cyber Garage Maven Repository</name>
+      <url>file:///var/www/maven/repo/</url>
+    </repository>
+  </distributionManagement>
+
+  <modules>
+    <module>core</module>
+  </modules>
+
+</project>
