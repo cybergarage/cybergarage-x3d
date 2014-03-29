@@ -27,6 +27,7 @@
     <module>core</module>
     <module>examples/x3d-player</module>
     <module>examples/vrml2x3d</module>
+    <module>examples/x3d2vrml</module>
   </modules>
 
 </project>

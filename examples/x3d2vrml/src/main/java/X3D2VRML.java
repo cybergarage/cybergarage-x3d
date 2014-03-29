@@ -16,21 +16,19 @@ public class X3D2VRML
 	{
 		int argc = args.length;
 
-/*		
 		if (argc < 1){
 			System.out.println("Usage: X3D2VRML <filename>");
 			return;
 		}
-*/
 	
 		SceneGraph sceneGraph = new SceneGraph();
 	
-//		if (sceneGraph.load(args[0]) == true)
-		String fname = "c:/src/CyberX3D/worlds/bugfix/Dimitrios/10vertices.x3d";
-		if (sceneGraph.load(fname) == true)
-			sceneGraph.print();
-		else
+		if (!sceneGraph.load(args[0])) {
 			System.out.println("\t" + sceneGraph.getParserErrorMessage());
+			return;
+		}
+
+		sceneGraph.print();
 	}
 }
 
