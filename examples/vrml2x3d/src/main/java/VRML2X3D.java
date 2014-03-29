@@ -15,21 +15,18 @@ public class VRML2X3D
 	public static void main(String args[]) 
 	{
 		int argc = args.length;
-/*		
 		if (argc < 1){
 			System.out.println("Usage: X3D2VRML <filename>");
 			return;
 		}
-*/
-	
+
 		SceneGraph sceneGraph = new SceneGraph();
-	
-//		if (sceneGraph.load(args[0]) == true)
-		String fname = "c:/src/CyberX3D/worlds/sthenge.wrl";
-		if (sceneGraph.load(fname) == true)
-			sceneGraph.printXML();
-		else
+		if (!sceneGraph.load(args[0])) {
 			System.out.println("\t" + sceneGraph.getParserErrorMessage());
+			return;
+		}
+
+		sceneGraph.printXML();
 	}
 }
 
