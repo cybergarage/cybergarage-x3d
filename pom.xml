@@ -7,7 +7,7 @@
   <version>${cybergarage-x3d.version}</version>
   <packaging>pom</packaging>
 
-  <name>cybergarage-x3d<</name>
+  <name>cybergarage-x3d</name>
   <url>http://www.cybergarage.org/</url>
 
   <properties>
