@@ -3,15 +3,15 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.cybergarage.x3d</groupId>
-  <artifactId>cyberx3d</artifactId>
-  <version>${cyberx3d.version}</version>
+  <artifactId>cybergarage-x3d</artifactId>
+  <version>${cybergarage-x3d.version}</version>
   <packaging>pom</packaging>
 
-  <name>CyberX3D for Java</name>
+  <name>cybergarage-x3d<</name>
   <url>http://www.cybergarage.org/</url>
 
   <properties>
-    <cyberx3d.version>1.4.1</cyberx3d.version>
+    <cybergarage-x3d.version>1.4.1</cybergarage-x3d.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 

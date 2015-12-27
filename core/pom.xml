@@ -3,16 +3,16 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>cyberx3d</artifactId>
+    <artifactId>cybergarage-x3d</artifactId>
     <groupId>org.cybergarage.x3d</groupId>
-    <version>${cyberx3d.version}</version>
+    <version>${cybergarage-x3d.version}</version>
   </parent>
 
-  <name>cyberx3d-core</name>
+  <name>cybergarage-x3d-core</name>
 
   <groupId>org.cybergarage.x3d</groupId>
-  <artifactId>cyberx3d-core</artifactId>
-  <version>${cyberx3d.version}</version>
+  <artifactId>cybergarage-x3d-core</artifactId>
+  <version>${cybergarage-x3d.version}</version>
   <packaging>jar</packaging>
 
   <properties>
