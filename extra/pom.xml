@@ -4,11 +4,11 @@
 
   <parent>
     <artifactId>cyberx3d</artifactId>
-    <groupId>org.cybergarage.cyberx3d</groupId>
+    <groupId>org.cybergarage.x3d</groupId>
     <version>${cyberx3d.version}</version>
   </parent>
 
-  <groupId>org.cybergarage.cyberx3d</groupId>
+  <groupId>org.cybergarage.x3d</groupId>
   <artifactId>cyberx3d-extra</artifactId>
   <version>${cyberx3d.version}</version>
   <packaging>jar</packaging>

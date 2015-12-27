@@ -4,12 +4,12 @@
 
   <parent>
     <artifactId>cyberx3d</artifactId>
-    <groupId>org.cybergarage.cyberx3d</groupId>
+    <groupId>org.cybergarage.x3d</groupId>
     <version>${cyberx3d.version}</version>
     <relativePath>../../</relativePath>
   </parent>
 
-  <groupId>org.cybergarage.cyberx3d</groupId>
+  <groupId>org.cybergarage.x3d</groupId>
   <artifactId>cyberx3d-player</artifactId>
   <version>${cyberx3d.version}</version>
   <packaging>jar</packaging>
@@ -32,7 +32,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.cybergarage.cyberx3d</groupId>
+      <groupId>org.cybergarage.x3d</groupId>
       <artifactId>cyberx3d-core</artifactId>
       <version>${cyberx3d.version}</version>
     </dependency>
