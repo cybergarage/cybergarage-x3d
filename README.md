@@ -11,7 +11,7 @@ The project is hosted on SourceForge.net as the following.
 - [Doxygen](http://www.cybergarage.org:8080/doxygen/cx3d4java/)
 - [Maven](http://www.cybergarage.org:8080/maven/repo/org/cybergarage/x3d/)
 
-## Using CyberX3D in your project
+## Using cybergarage-x3d in your project
 
 ### Maven
 
