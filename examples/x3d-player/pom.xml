@@ -10,6 +10,7 @@
   </parent>
 
   <groupId>org.cybergarage.x3d</groupId>
+  <name>x3d player</name>
   <artifactId>x3d-player</artifactId>
   <version>${cybergarage-x3d.version}</version>
   <packaging>jar</packaging>
@@ -33,7 +34,7 @@
   <dependencies>
     <dependency>
       <groupId>org.cybergarage.x3d</groupId>
-      <artifactId>x3d-core</artifactId>
+      <artifactId>cybergarage-x3d-core</artifactId>
       <version>${cybergarage-x3d.version}</version>
     </dependency>
   </dependencies>

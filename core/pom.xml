@@ -2,22 +2,23 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <artifactId>cybergarage-x3d</artifactId>
-    <groupId>org.cybergarage.x3d</groupId>
-    <version>${cybergarage-x3d.version}</version>
-  </parent>
-
-  <name>x3d-core</name>
-
+  <name>x3d core</name>
   <groupId>org.cybergarage.x3d</groupId>
-  <artifactId>x3d-core</artifactId>
-  <version>${cybergarage-x3d.version}</version>
+  <artifactId>cybergarage-x3d-core</artifactId>
+  <version>1.4.1</version>
   <packaging>jar</packaging>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
+  <distributionManagement>
+    <repository>
+      <id>org.cybergarage</id>
+      <name>Cyber Garage Maven Repository</name>
+      <url>file:///var/www/maven/repo/</url>
+    </repository>
+  </distributionManagement>
 
   <build>
     <plugins>
