@@ -15,9 +15,9 @@ The project is hosted on SourceForge.net as the following.
 
 ### Maven
 
-I maintain a my personal repository of Maven, [Cyber Garage Maven Repository](http://www.cybergarage.org:8080/maven/repo/), for my Java projects, and CyberX3D is included in the repository too.
+I maintain a my personal repository of Maven, [Cyber Garage Maven Repository](http://www.cybergarage.org:8080/maven/repo/), for my Java projects, and cybergarage-x3d is included in the repository too.
 
-To use CyberX3D in your project for Maven, add the following elements for the personal repository into your Maven project setting.
+To use cybergarage-x3d in your project for Maven, add the following elements for the personal repository into your Maven project setting.
 
 ```
 <project>
