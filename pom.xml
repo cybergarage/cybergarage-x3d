@@ -11,7 +11,7 @@
   <url>http://www.cybergarage.org/</url>
 
   <properties>
-    <cybergarage-x3d.version>1.4.1</cybergarage-x3d.version>
+    <cybergarage-x3d.version>1.4.2</cybergarage-x3d.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
