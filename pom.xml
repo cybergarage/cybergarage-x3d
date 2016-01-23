@@ -3,9 +3,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.cybergarage.x3d</groupId>
+  <packaging>pom</packaging>
   <artifactId>cybergarage-x3d</artifactId>
   <version>${cybergarage-x3d.version}</version>
-  <packaging>pom</packaging>
 
   <name>cybergarage-x3d</name>
   <url>http://www.cybergarage.org/</url>
@@ -14,6 +14,12 @@
     <cybergarage-x3d.version>1.4.1</cybergarage-x3d.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
+  <scm>
+        <connection>scm:git:https://github.com/cybergarage/cybergarage-x3d.git</connection>
+        <developerConnection>scm:git:https://github.com/cybergarage/cybergarage-x3d.git</developerConnection>
+        <url>https://github.com/cybergarage/cybergarage-x3d/blob/master/</url>
+  </scm>
 
   <organization>
   	<name>CyberGarage</name>
