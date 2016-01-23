@@ -9,7 +9,7 @@
   </parent>
 
   <groupId>org.cybergarage.x3d</groupId>
-  <artifactId>cybergarage-x3d-extra</artifactId>
+  <artifactId>x3d-extra</artifactId>
   <version>${cybergarage-x3d.version}</version>
   <packaging>jar</packaging>
 
