@@ -8,10 +8,10 @@
     <version>${cybergarage-x3d.version}</version>
   </parent>
 
-  <name>cybergarage-x3d-core</name>
+  <name>x3d-core</name>
 
   <groupId>org.cybergarage.x3d</groupId>
-  <artifactId>cybergarage-x3d-core</artifactId>
+  <artifactId>x3d-core</artifactId>
   <version>${cybergarage-x3d.version}</version>
   <packaging>jar</packaging>
 
