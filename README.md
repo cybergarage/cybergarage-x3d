@@ -1,6 +1,6 @@
 # cybergarage-x3d
 
-cybergarage-x3d is a development package for X3D/VRML and Java programmers. Using the package, you can easily read and write the X3D/!VRML files, set and get the scene graph information, draw the geometries, run the behaviors easily.
+cybergarage-x3d is a development package for X3D/VRML and Java programmers. Using the package, you can easily read and write the X3D/VRML files, set and get the scene graph information, draw the geometries, run the behaviors easily.
 
 ## Repositories
 
